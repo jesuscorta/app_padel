@@ -1,0 +1,20 @@
+import { Link } from 'react-router-dom'
+import { Card } from '../components/ui'
+
+export default function Settings() {
+  return (
+    <div className="space-y-3">
+      <h2 className="text-lg font-bold">Ajustes</h2>
+      <Card className="divide-y divide-neutral-100 p-0">
+        <Link to="/jugadores" className="flex items-center justify-between px-4 py-4 font-medium">
+          Jugadores
+          <span className="text-neutral-300">›</span>
+        </Link>
+        <Link to="/ligas" className="flex items-center justify-between px-4 py-4 font-medium">
+          Ligas
+          <span className="text-neutral-300">›</span>
+        </Link>
+      </Card>
+    </div>
+  )
+}
