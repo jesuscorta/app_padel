@@ -69,7 +69,10 @@ export function computeStandings({
     const playedIds = [...new Set(slots.map((slot) => slot.actual_player_id))]
     for (const playerId of playedIds) {
       const row = rows.get(playerId)
-      if (row) row.played += 1
+      if (row) {
+        row.played += 1
+        row.points += 1
+      }
     }
 
     const winnerIds = [
@@ -83,7 +86,7 @@ export function computeStandings({
       const row = rows.get(playerId)
       if (!row) continue
       row.wins += 1
-      row.points += 3
+      row.points += 2
     }
   }
 

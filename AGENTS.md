@@ -22,6 +22,7 @@ PWA de gestión de liga de pádel entre amigos.
 - Cada jornada tiene 2 partidos
 - Solo se registra el ganador de cada partido
 - Los puntos individuales van al jugador que realmente jugó
+- Los sustitutos deben existir previamente en la app
 - Los sustitutos no alteran la pareja temporal de la ronda
 - Las pelotas se asignan por partido
 - Solo puede existir una liga activa

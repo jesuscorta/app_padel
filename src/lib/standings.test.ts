@@ -71,12 +71,20 @@ describe('computeStandings', () => {
     const standings = computeStandings({ players, pairs, matches, matchPlayers, mode: 'todos' })
     expect(standings.find((row) => row.playerId === 't5')?.points).toBe(0)
     expect(standings.find((row) => row.playerId === 's1')?.wins).toBe(1)
+    expect(standings.find((row) => row.playerId === 't7')?.points).toBe(1)
+  })
+
+  it('en la vista de titulares, el ausente sigue con 0 puntos y el sustituto no aparece', () => {
+    const standings = computeStandings({ players, pairs, matches, matchPlayers, mode: 'titulares' })
+    expect(standings.find((row) => row.playerId === 't5')?.points).toBe(0)
+    expect(standings.find((row) => row.playerId === 's1')).toBeUndefined()
   })
 
   it('ordena por puntos, luego porcentaje, luego menos partidos', () => {
     const standings = computeStandings({ players, pairs, matches, matchPlayers, mode: 'todos' })
     expect(standings[0].playerId).toBe('t1')
     expect(standings[1].playerId).toBe('t2')
+    expect(standings.find((row) => row.playerId === 't3')?.points).toBe(1)
   })
 
   it('puede calcular la clasificación de una ronda concreta', () => {

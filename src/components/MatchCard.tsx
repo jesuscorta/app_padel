@@ -1,9 +1,10 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { playerName } from '../lib/LeagueContext'
 import { advanceScheduleIfComplete, clearWinner, setWinner } from '../lib/db/matches'
-import { createSubstitute, setActualPlayer } from '../lib/db/substitutions'
+import { setActualPlayer } from '../lib/db/substitutions'
 import { pairLabel } from '../lib/format'
-import { Badge, Button, Card, ConfirmSheet, Sheet, cx } from './ui'
+import { Badge, BusyOverlay, Button, Card, ConfirmSheet, Sheet, cx } from './ui'
 import { IconBall } from './icons'
 import type { BallDuty, Match, MatchPlayer, Pair, Player } from '../types'
 
@@ -38,9 +39,8 @@ export default function MatchCard({
 }: MatchCardProps) {
   const [pendingWinner, setPendingWinner] = useState<Pair | null>(null)
   const [correctOpen, setCorrectOpen] = useState(false)
-  const [absenceOpen, setAbsenceOpen] = useState(false)
+  const [absencePair, setAbsencePair] = useState<Pair | null>(null)
   const [selectedSlotId, setSelectedSlotId] = useState<string | null>(null)
-  const [newSubstituteName, setNewSubstituteName] = useState('')
   const [lineupError, setLineupError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
 
@@ -53,6 +53,9 @@ export default function MatchCard({
     .filter(Boolean) as MatchPlayer[]
   const loser = winner === pairA.id ? pairB : winner === pairB.id ? pairA : null
   const selectedSlot = lineup.find((slot) => slot.id === selectedSlotId) ?? null
+  const selectedPair = absencePair
+  const selectedPairSlots =
+    selectedPair?.id === pairA.id ? slotsA : selectedPair?.id === pairB.id ? slotsB : []
   const substitutes = players.filter((p) => p.role === 'sustituto' && p.active)
 
   async function chooseWinner(pair: Pair) {
@@ -95,53 +98,59 @@ export default function MatchCard({
       await setActualPlayer(match.id, slot.pair_id, slot.titular_id, actualPlayerId)
       setLineupError(null)
       setSelectedSlotId(null)
-      setNewSubstituteName('')
+      setAbsencePair(null)
       await onChanged()
     } finally {
       setSaving(false)
     }
   }
 
-  async function createAndAssign(slot: MatchPlayer) {
-    if (!newSubstituteName.trim()) return
-    setSaving(true)
-    try {
-      const substituteId = await createSubstitute(newSubstituteName)
-      await setActualPlayer(match.id, slot.pair_id, slot.titular_id, substituteId)
-      setLineupError(null)
-      setSelectedSlotId(null)
-      setNewSubstituteName('')
-      await onChanged()
-    } finally {
-      setSaving(false)
-    }
+  function openAbsence(pair: Pair) {
+    setLineupError(null)
+    setSelectedSlotId(null)
+    setAbsencePair(pair)
   }
 
   function renderPair(pair: Pair, slots: MatchPlayer[]) {
     const isWinner = winner === pair.id
     return (
-      <button
-        disabled={readOnly || saving}
-        onClick={() => (winner ? setCorrectOpen(true) : setPendingWinner(pair))}
+      <div
         className={cx(
-          'flex-1 rounded-2xl border-2 p-3 text-center transition',
-          isWinner
-            ? 'border-brand bg-brand/5'
-            : 'border-transparent bg-neutral-100 active:bg-neutral-200',
+          'flex-1 rounded-2xl border-2 p-3 transition',
+          isWinner ? 'border-brand bg-brand/5' : 'border-transparent bg-neutral-100',
         )}
       >
-        {slots.map((s) => (
-          <p key={s.id} className="text-sm leading-6 font-semibold">
-            {slotLabel(players, s)}
-          </p>
-        ))}
-        {isWinner && <Badge className="mt-1 bg-brand text-white">Ganador</Badge>}
-      </button>
+        <button
+          disabled={readOnly || saving}
+          onClick={() => (winner ? setCorrectOpen(true) : setPendingWinner(pair))}
+          className="w-full text-center"
+        >
+          {slots.map((s) => (
+            <p key={s.id} className="text-sm leading-6 font-semibold">
+              {slotLabel(players, s)}
+            </p>
+          ))}
+          {isWinner && <Badge className="mt-1 bg-brand text-white">Ganador</Badge>}
+        </button>
+
+        {!readOnly && (
+          <Button
+            variant="secondary"
+            full
+            className="mt-3 min-h-9 px-3 py-2 text-sm"
+            disabled={saving}
+            onClick={() => openAbsence(pair)}
+          >
+            Ausencia
+          </Button>
+        )}
+      </div>
     )
   }
 
   return (
     <Card>
+      <BusyOverlay open={saving} label="Guardando partido…" />
       <div className="flex items-stretch gap-2">
         {renderPair(pairA, slotsA)}
         <span className="self-center text-xs font-bold text-neutral-400">VS</span>
@@ -156,26 +165,13 @@ export default function MatchCard({
             {ballDuty ? playerName(players, ballDuty.player_id) : '—'}
           </span>
         </span>
-        {!readOnly && (
-          <div className="flex items-center gap-1">
-            <button
-              className="min-h-8 rounded-lg px-2 font-semibold text-brand active:bg-neutral-100"
-              onClick={() => {
-                setLineupError(null)
-                setAbsenceOpen(true)
-              }}
-            >
-              Ausencias
-            </button>
-            {winner && (
-              <button
-                className="min-h-8 rounded-lg px-2 font-semibold text-brand active:bg-neutral-100"
-                onClick={() => setCorrectOpen(true)}
-              >
-                Corregir
-              </button>
-            )}
-          </div>
+        {winner && !readOnly && (
+          <button
+            className="min-h-8 rounded-lg px-2 font-semibold text-brand active:bg-neutral-100"
+            onClick={() => setCorrectOpen(true)}
+          >
+            Corregir
+          </button>
         )}
       </div>
 
@@ -206,51 +202,42 @@ export default function MatchCard({
         </div>
       </Sheet>
 
-      <Sheet open={absenceOpen} onClose={() => setAbsenceOpen(false)} title="Gestionar ausencias">
+      <Sheet
+        open={absencePair !== null}
+        onClose={() => {
+          setAbsencePair(null)
+          setSelectedSlotId(null)
+          setLineupError(null)
+        }}
+        title={selectedPair ? `Ausencia en ${pairLabel(players, selectedPair)}` : 'Gestionar ausencia'}
+      >
         <div className="space-y-4">
           <p className="text-sm text-neutral-500">
             El sustituto juega este partido, pero la pareja temporal de la ronda no cambia.
           </p>
-          <div className="space-y-2">
-            {[pairA, pairB].map((pair) => {
-              const slots = pair.id === pairA.id ? slotsA : slotsB
-              return (
-                <div key={pair.id} className="space-y-2">
-                  <p className="text-sm font-semibold text-neutral-500">{pairLabel(players, pair)}</p>
-                  {slots.map((slot) => {
-                    const selected = slot.id === selectedSlotId
-                    return (
-                      <button
-                        key={slot.id}
-                        onClick={() => {
-                          setSelectedSlotId(slot.id)
-                          setLineupError(null)
-                        }}
-                        className={cx(
-                          'w-full rounded-xl border px-4 py-3 text-left transition',
-                          selected
-                            ? 'border-brand bg-brand/5'
-                            : 'border-neutral-200 bg-neutral-50 active:bg-neutral-100',
-                        )}
-                      >
-                        <p className="text-sm text-neutral-500">Titular</p>
-                        <p className="font-semibold">{playerName(players, slot.titular_id)}</p>
-                        <p className="mt-1 text-sm text-neutral-500">Juega</p>
-                        <p className="font-medium">{slotLabel(players, slot)}</p>
-                      </button>
-                    )
-                  })}
-                </div>
-              )
-            })}
-          </div>
+          {selectedPair && !selectedSlot && (
+            <div className="space-y-2">
+              <p className="text-sm font-semibold text-neutral-600">¿Quién falta?</p>
+              {selectedPairSlots.map((slot) => (
+                <button
+                  key={slot.id}
+                  onClick={() => {
+                    setSelectedSlotId(slot.id)
+                    setLineupError(null)
+                  }}
+                  className="w-full rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-left font-semibold transition active:bg-neutral-100"
+                >
+                  {playerName(players, slot.titular_id)}
+                </button>
+              ))}
+            </div>
+          )}
 
           {selectedSlot && (
             <div className="space-y-3 border-t border-neutral-200 pt-4">
               <div>
-                <p className="text-sm font-semibold text-neutral-600">Asignar sustituto</p>
-                <p className="text-sm text-neutral-500">
-                  Slot de {playerName(players, selectedSlot.titular_id)}
+                <p className="text-sm font-semibold text-neutral-600">
+                  Elige sustituto para {playerName(players, selectedSlot.titular_id)}
                 </p>
               </div>
 
@@ -267,9 +254,20 @@ export default function MatchCard({
 
               <div className="space-y-2">
                 {substitutes.length === 0 && (
-                  <p className="text-sm text-neutral-500">
-                    No hay sustitutos activos. Crea uno abajo y se asignará al momento.
-                  </p>
+                  <div className="space-y-2 rounded-xl bg-amber-50 p-3 text-sm text-amber-900">
+                    <p>No hay sustitutos activos creados todavía.</p>
+                    <Link
+                      to="/jugadores"
+                      onClick={() => {
+                        setAbsencePair(null)
+                        setSelectedSlotId(null)
+                      }}
+                    >
+                      <Button variant="secondary" full>
+                        Ir a Jugadores
+                      </Button>
+                    </Link>
+                  </div>
                 )}
                 {substitutes.map((substitute) => (
                   <button
@@ -289,23 +287,14 @@ export default function MatchCard({
                 ))}
               </div>
 
-              <form
-                className="space-y-2"
-                onSubmit={(event) => {
-                  event.preventDefault()
-                  createAndAssign(selectedSlot)
-                }}
+              <Button
+                variant="ghost"
+                full
+                disabled={saving}
+                onClick={() => setSelectedSlotId(null)}
               >
-                <input
-                  value={newSubstituteName}
-                  onChange={(event) => setNewSubstituteName(event.target.value)}
-                  placeholder="Crear sustituto rápido…"
-                  className="min-h-11 w-full rounded-xl border border-neutral-300 px-3 outline-none focus:border-brand focus:ring-2 focus:ring-brand/30"
-                />
-                <Button type="submit" full disabled={saving || !newSubstituteName.trim()}>
-                  Crear y asignar
-                </Button>
-              </form>
+                Cambiar jugador ausente
+              </Button>
             </div>
           )}
         </div>

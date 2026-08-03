@@ -45,6 +45,18 @@ export function Spinner({ className }: { className?: string }) {
   )
 }
 
+export function BusyOverlay({ open, label = 'Cargando…' }: { open: boolean; label?: string }) {
+  if (!open) return null
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/25 px-6" role="status" aria-label={label}>
+      <div className="flex items-center gap-3 rounded-2xl bg-white px-4 py-3 shadow-xl">
+        <div className="h-6 w-6 animate-spin rounded-full border-4 border-neutral-200 border-t-brand" />
+        <span className="text-sm font-semibold text-neutral-700">{label}</span>
+      </div>
+    </div>
+  )
+}
+
 export function EmptyState({ title, children }: { title: string; children?: ReactNode }) {
   return (
     <div className="flex flex-col items-center gap-2 py-12 text-center">

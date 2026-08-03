@@ -4,7 +4,7 @@ import { useLeague } from '../lib/LeagueContext'
 import { createLeague } from '../lib/db/leagues'
 import { shuffle } from '../lib/draw'
 import { generateRoundPairings } from '../lib/schedule'
-import { Button, Card, ConfirmSheet, Spinner } from '../components/ui'
+import { BusyOverlay, Button, Card, ConfirmSheet, Spinner } from '../components/ui'
 import type { Player } from '../types'
 
 export default function Draw() {
@@ -74,6 +74,7 @@ export default function Draw() {
 
   return (
     <div className="space-y-4">
+      <BusyOverlay open={saving} label="Generando liga…" />
       <div className="space-y-1">
         <h2 className="text-lg font-bold">Sorteo de la liga</h2>
         <p className="text-sm text-neutral-500">
@@ -118,7 +119,7 @@ export default function Draw() {
           Repetir sorteo
         </Button>
         <Button full disabled={saving || !name.trim() || !order} onClick={() => setConfirmOpen(true)}>
-          Confirmar liga
+          {saving ? 'Generando…' : 'Confirmar liga'}
         </Button>
       </div>
 

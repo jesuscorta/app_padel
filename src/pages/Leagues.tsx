@@ -6,6 +6,7 @@ import { deleteLeague, finishLeague, getLeagueData, listFinishedLeagues } from '
 import { computeStandings } from '../lib/standings'
 import {
   Badge,
+  BusyOverlay,
   Button,
   Card,
   ConfirmSheet,
@@ -109,6 +110,7 @@ export default function Leagues() {
 
   return (
     <div className="space-y-5">
+      <BusyOverlay open={saving} label="Guardando cambios…" />
       {actionError && (
         <Card className="border border-red-200 bg-red-50 text-red-900">
           <p className="text-sm font-medium">{actionError}</p>

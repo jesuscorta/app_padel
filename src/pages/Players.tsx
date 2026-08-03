@@ -1,7 +1,7 @@
 import { useMemo, useState, type FormEvent } from 'react'
 import { useLeague } from '../lib/LeagueContext'
 import { createPlayer, updatePlayer } from '../lib/db/players'
-import { Badge, Button, Card, Sheet, Spinner, cx } from '../components/ui'
+import { Badge, BusyOverlay, Button, Card, Sheet, Spinner, cx } from '../components/ui'
 import type { Player, PlayerRole } from '../types'
 
 const TITULARES_NECESARIOS = 8
@@ -134,6 +134,7 @@ export default function Players() {
 
   return (
     <div className="space-y-6">
+      <BusyOverlay open={saving} label="Guardando jugador…" />
       <section className="space-y-3">
         <h2 className="text-lg font-bold">Titulares</h2>
         {renderList(titulares, { actives: titularesActivos.length, needed: TITULARES_NECESARIOS })}
@@ -149,6 +150,9 @@ export default function Players() {
 
       <section className="space-y-3">
         <h2 className="text-lg font-bold">Sustitutos</h2>
+        <p className="text-sm text-neutral-500">
+          Crea aquí los sustitutos que luego podrás asignar en cualquier partido desde la jornada.
+        </p>
         {renderList(sustitutos)}
         {renderAddForm('sustituto', newSustituto, setNewSustituto, 'Nuevo sustituto…', false)}
       </section>

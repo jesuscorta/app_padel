@@ -19,7 +19,7 @@ PWA mobile-first para gestionar una liga de pádel entre amigos.
 - Pantalla principal mostrando la jornada activa dentro de la ronda activa
 - Registrar únicamente el ganador
 - Corregir resultados
-- Ausencias con sustitutos sin modificar la pareja temporal de esa ronda
+- Ausencias con sustitutos ya creados, sin modificar la pareja temporal de esa ronda
 - Clasificación individual:
 - por ronda
 - global
@@ -41,6 +41,7 @@ PWA mobile-first para gestionar una liga de pádel entre amigos.
 - Cada jornada contiene 2 partidos
 - Solo se registra el ganador de cada partido
 - Los puntos individuales van al jugador que realmente jugó
+- Los sustitutos deben existir previamente en la app
 - Los sustitutos no alteran la pareja temporal de esa ronda
 - Las pelotas se asignan por partido
 - Solo puede existir una liga activa

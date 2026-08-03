@@ -1,16 +1,5 @@
 import { supabase } from '../supabase'
 
-/** Crea un sustituto y devuelve su id para asignarlo al vuelo. */
-export async function createSubstitute(name: string): Promise<string> {
-  const { data, error } = await supabase
-    .from('players')
-    .insert({ name: name.trim(), role: 'sustituto' })
-    .select('id')
-    .single()
-  if (error) throw error
-  return data.id as string
-}
-
 /** Sustituye temporalmente al titular en un slot concreto del partido sin tocar la pareja de la ronda. */
 export async function setActualPlayer(
   matchId: string,
