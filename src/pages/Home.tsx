@@ -190,9 +190,9 @@ export default function Home() {
 
         {safeViewedDay && (
           <div className="mx-auto w-full max-w-sm space-y-2 rounded-2xl border border-neutral-200 bg-neutral-50 p-3">
-            <div className="flex items-baseline justify-between">
-              <div className="flex items-center gap-2">
-                <p className="text-xs font-semibold uppercase tracking-wide text-neutral-400">Jornadas</p>
+            <div className="flex flex-col items-center gap-2 text-center">
+              <p className="text-xs font-semibold uppercase tracking-wide text-neutral-400">Jornadas</p>
+              <div className="flex flex-wrap items-center justify-center gap-2">
                 <h3 className="font-semibold text-neutral-800">Jornada {safeViewedDay.number} de 3</h3>
                 {safeViewedRound.id === currentRound.id && safeViewedDay.number === currentDay?.number && (
                   <Badge className="bg-brand/10 text-brand">Actual</Badge>
@@ -209,7 +209,7 @@ export default function Home() {
               >
                 <IconChevronLeft className="h-4 w-4" />
               </button>
-              <div className="flex max-w-[220px] flex-1 gap-1 overflow-x-auto px-1 py-1">
+              <div className="flex flex-wrap items-center justify-center gap-1 px-1 py-1">
                 {viewedRoundDays.map((day) => (
                   <button
                     key={day.id}
