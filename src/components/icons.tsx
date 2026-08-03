@@ -61,3 +61,19 @@ export function IconSettings({ className }: IconProps) {
     </svg>
   )
 }
+
+export function IconChevronLeft({ className }: IconProps) {
+  return (
+    <svg {...base(className)}>
+      <path d="M15 18 9 12l6-6" />
+    </svg>
+  )
+}
+
+export function IconChevronRight({ className }: IconProps) {
+  return (
+    <svg {...base(className)}>
+      <path d="m9 18 6-6-6-6" />
+    </svg>
+  )
+}

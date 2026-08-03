@@ -152,6 +152,13 @@ export default function MatchCard({
   return (
     <Card>
       <BusyOverlay open={saving} label="Guardando partido…" />
+      <div className="mb-3 flex items-center justify-between gap-3">
+        {readOnly ? (
+          <Badge className="bg-neutral-200 text-neutral-600">Solo lectura</Badge>
+        ) : (
+          <p className="text-sm font-semibold text-brand">Toca la pareja ganadora</p>
+        )}
+      </div>
       <div className="flex items-stretch gap-2">
         {renderPair(pairA, slotsA)}
         <span className="self-center text-xs font-bold text-neutral-400">VS</span>
