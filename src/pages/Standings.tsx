@@ -25,6 +25,7 @@ export default function Standings() {
     mode,
     roundId: scope === 'global' ? undefined : active.rounds.find((round) => round.number === scope)?.id,
   })
+  const topPair = standings.length >= 2 ? [standings[0], standings[1]] : null
 
   return (
     <div className="space-y-4">
@@ -66,6 +67,22 @@ export default function Standings() {
           ))}
         </div>
       </div>
+
+      {topPair && (
+        <Card className="overflow-hidden border border-brand/10 bg-linear-to-br from-brand/8 via-white to-accent/10 p-0">
+          <div className="space-y-3 p-4">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-neutral-400">Pareja TOP</p>
+                <h3 className="mt-1 text-xl font-black text-neutral-900">
+                  {topPair[0].name} <span className="text-neutral-400">&</span> {topPair[1].name}
+                </h3>
+              </div>
+              <Badge className="bg-brand text-white">TOP</Badge>
+            </div>
+          </div>
+        </Card>
+      )}
 
       <div className="space-y-3">
         {standings.map((row, index) => (
