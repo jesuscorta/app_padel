@@ -9,24 +9,23 @@ export default function Home() {
   const [selectedRoundNumber, setSelectedRoundNumber] = useState<number | null>(null)
   const [selectedDayNumber, setSelectedDayNumber] = useState<number | null>(null)
 
-  if (loading) return <Spinner />
-
-  if (!active) {
-    return (
-      <EmptyState title="No hay liga activa">
-        <p className="mb-4">Sortea las 7 rondas para empezar una nueva liga.</p>
-        <Link to="/sorteo">
-          <Button>Ir al sorteo</Button>
-        </Link>
-      </EmptyState>
-    )
-  }
-
-  const currentRound = active.rounds.find((r) => r.status === 'current')
+  const currentRound = active?.rounds.find((r) => r.status === 'current') ?? null
   const currentRoundDays = currentRound
-    ? active.roundDays.filter((day) => day.round_id === currentRound.id)
+    ? (active?.roundDays.filter((day) => day.round_id === currentRound.id) ?? [])
     : []
-  const currentDay = currentRoundDays.find((day) => day.status === 'current')
+  const currentDay = currentRoundDays.find((day) => day.status === 'current') ?? null
+  const viewedRound =
+    active?.rounds.find((round) => round.number === selectedRoundNumber) ?? currentRound
+  const viewedRoundDays = viewedRound
+    ? (active?.roundDays
+        .filter((day) => day.round_id === viewedRound.id)
+        .sort((a, b) => a.number - b.number) ?? [])
+    : []
+  const viewedDay =
+    viewedRoundDays.find((day) => day.number === selectedDayNumber) ??
+    (viewedRound?.id === currentRound?.id ? currentDay : viewedRoundDays[0]) ??
+    viewedRoundDays[0] ??
+    null
 
   useEffect(() => {
     if (currentRound) setSelectedRoundNumber((prev) => prev ?? currentRound.number)
@@ -44,6 +43,29 @@ export default function Home() {
     }
   }, [active, currentRound, selectedRoundNumber])
 
+  useEffect(() => {
+    if (!currentRound || !viewedRound || !viewedRoundDays.length) return
+    setSelectedDayNumber((prev) => {
+      if (prev && viewedRoundDays.some((day) => day.number === prev)) return prev
+      return viewedRound.id === currentRound.id
+        ? (currentDay?.number ?? viewedRoundDays[0].number)
+        : viewedRoundDays[0].number
+    })
+  }, [viewedRound, viewedRoundDays, currentRound, currentDay])
+
+  if (loading) return <Spinner />
+
+  if (!active) {
+    return (
+      <EmptyState title="No hay liga activa">
+        <p className="mb-4">Sortea las 7 rondas para empezar una nueva liga.</p>
+        <Link to="/sorteo">
+          <Button>Ir al sorteo</Button>
+        </Link>
+      </EmptyState>
+    )
+  }
+
   if (!currentRound) {
     return (
       <Card className="space-y-2 text-center">
@@ -60,35 +82,20 @@ export default function Home() {
     )
   }
 
-  const viewedRound =
-    active.rounds.find((round) => round.number === selectedRoundNumber) ?? currentRound
-  const viewedRoundDays = active.roundDays
-    .filter((day) => day.round_id === viewedRound.id)
-    .sort((a, b) => a.number - b.number)
-  const viewedDay =
-    viewedRoundDays.find((day) => day.number === selectedDayNumber) ??
-    (viewedRound.id === currentRound.id ? currentDay : viewedRoundDays[0]) ??
-    viewedRoundDays[0]
+  const safeViewedRound = viewedRound ?? currentRound
+  const safeViewedDay = viewedDay
   const matches = viewedDay ? active.matches.filter((m) => m.day_id === viewedDay.id) : []
   const done = matches.filter((m) => m.winner_pair_id !== null).length
   const pairById = new Map(active.pairs.map((p) => [p.id, p]))
   const currentRoundNumber = currentRound.number
-
-  useEffect(() => {
-    if (!viewedRoundDays.length) return
-    setSelectedDayNumber((prev) => {
-      if (prev && viewedRoundDays.some((day) => day.number === prev)) return prev
-      return viewedRound.id === currentRound.id ? (currentDay?.number ?? viewedRoundDays[0].number) : viewedRoundDays[0].number
-    })
-  }, [viewedRound.id, viewedRoundDays, currentRound.id, currentDay])
 
   return (
     <div className="space-y-4">
       <div className="space-y-3">
         <div className="flex items-baseline justify-between">
           <div className="flex items-center gap-2">
-            <h2 className="text-lg font-bold">Ronda {viewedRound.number} de 7</h2>
-            {viewedRound.number === currentRoundNumber && (
+            <h2 className="text-lg font-bold">Ronda {safeViewedRound.number} de 7</h2>
+            {safeViewedRound.number === currentRoundNumber && (
               <Badge className="bg-brand/10 text-brand">Actual</Badge>
             )}
           </div>
@@ -98,8 +105,8 @@ export default function Home() {
         <div className="flex items-center gap-2">
           <Button
             variant="secondary"
-            disabled={viewedRound.number === 1}
-            onClick={() => setSelectedRoundNumber(viewedRound.number - 1)}
+            disabled={safeViewedRound.number === 1}
+            onClick={() => setSelectedRoundNumber(safeViewedRound.number - 1)}
           >
             Anterior
           </Button>
@@ -110,7 +117,7 @@ export default function Home() {
                 onClick={() => setSelectedRoundNumber(round.number)}
                 className={cx(
                   'min-h-10 rounded-full px-3 text-sm font-semibold whitespace-nowrap transition',
-                  round.number === viewedRound.number
+                  round.number === safeViewedRound.number
                     ? 'bg-brand text-white'
                     : 'bg-neutral-200 text-neutral-600 active:bg-neutral-300',
                 )}
@@ -121,19 +128,19 @@ export default function Home() {
           </div>
           <Button
             variant="secondary"
-            disabled={viewedRound.number === 7}
-            onClick={() => setSelectedRoundNumber(viewedRound.number + 1)}
+            disabled={safeViewedRound.number === 7}
+            onClick={() => setSelectedRoundNumber(safeViewedRound.number + 1)}
           >
             Siguiente
           </Button>
         </div>
 
-        {viewedDay && (
+        {safeViewedDay && (
           <div className="space-y-2">
             <div className="flex items-baseline justify-between">
               <div className="flex items-center gap-2">
-                <h3 className="font-semibold">Jornada {viewedDay.number} de 3</h3>
-                {viewedRound.id === currentRound.id && viewedDay.number === currentDay?.number && (
+                <h3 className="font-semibold">Jornada {safeViewedDay.number} de 3</h3>
+                {safeViewedRound.id === currentRound.id && safeViewedDay.number === currentDay?.number && (
                   <Badge className="bg-brand/10 text-brand">Actual</Badge>
                 )}
               </div>
@@ -142,8 +149,8 @@ export default function Home() {
             <div className="flex items-center gap-2">
               <Button
                 variant="secondary"
-                disabled={viewedDay.number === 1}
-                onClick={() => setSelectedDayNumber(viewedDay.number - 1)}
+                disabled={safeViewedDay.number === 1}
+                onClick={() => setSelectedDayNumber(safeViewedDay.number - 1)}
               >
                 Anterior
               </Button>
@@ -165,8 +172,8 @@ export default function Home() {
               </div>
               <Button
                 variant="secondary"
-                disabled={viewedDay.number === 3}
-                onClick={() => setSelectedDayNumber(viewedDay.number + 1)}
+                disabled={safeViewedDay.number === 3}
+                onClick={() => setSelectedDayNumber(safeViewedDay.number + 1)}
               >
                 Siguiente
               </Button>
