@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import MatchCard from '../components/MatchCard'
+import HistoryMatchRow from '../components/HistoryMatchRow'
 import { useLeague } from '../lib/LeagueContext'
 import { deleteLeague, finishLeague, getLeagueData, listFinishedLeagues } from '../lib/db/leagues'
 import { computeStandings } from '../lib/standings'
@@ -309,12 +309,12 @@ export default function Leagues() {
                   <div key={round.id} className="space-y-3">
                     <p className="font-semibold">Ronda {round.number}</p>
                     {roundDays.map((day) => (
-                      <div key={day.id} className="space-y-3 rounded-2xl bg-neutral-50 p-3">
+                      <div key={day.id} className="space-y-2 rounded-2xl bg-neutral-50 p-3">
                         <p className="font-medium text-neutral-700">Jornada {day.number}</p>
                         {selected.matches
                           .filter((match) => match.day_id === day.id)
                           .map((match) => (
-                            <MatchCard
+                            <HistoryMatchRow
                               key={match.id}
                               match={match}
                               pairA={pairById.get(match.pair_a_id)!}
@@ -322,8 +322,7 @@ export default function Leagues() {
                               players={players}
                               lineup={selected.matchPlayers.filter((slot) => slot.match_id === match.id)}
                               ballDuty={selected.ballDuties.find((duty) => duty.match_id === match.id)}
-                              readOnly
-                              onChanged={() => undefined}
+                              showBallDuty
                             />
                           ))}
                       </div>
