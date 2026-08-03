@@ -50,6 +50,19 @@ export interface Match {
   position: number
   pair_a_id: string
   pair_b_id: string
+  set1_a: number | null
+  set1_b: number | null
+  set1_tb_a: number | null
+  set1_tb_b: number | null
+  set2_a: number | null
+  set2_b: number | null
+  set2_tb_a: number | null
+  set2_tb_b: number | null
+  set3_a: number | null
+  set3_b: number | null
+  set3_tb_a: number | null
+  set3_tb_b: number | null
+  set3_incomplete: boolean
   winner_pair_id: string | null
   created_at: string
 }

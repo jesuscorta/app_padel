@@ -4,8 +4,9 @@ import ShareDayCard from '../components/ShareDayCard'
 import { useLeague } from '../lib/LeagueContext'
 import MatchCard from '../components/MatchCard'
 import { Badge, BusyOverlay, Button, Card, EmptyState, Spinner, cx } from '../components/ui'
-import { IconChevronLeft, IconChevronRight } from '../components/icons'
+import { IconChevronLeft, IconChevronRight, IconShare } from '../components/icons'
 import { pairLabel } from '../lib/format'
+import { computeMatchScoreFromMatch } from '../lib/scoring'
 import { shareNodeAsImage } from '../lib/share'
 
 export default function Home() {
@@ -113,6 +114,7 @@ export default function Home() {
           ballDuty: ballDutyPlayerId
             ? players.find((player) => player.id === ballDutyPlayerId)?.name ?? '—'
             : '—',
+          scoreLine: computeMatchScoreFromMatch(match)?.scoreLine,
         }
       }),
     [active?.ballDuties, currentDayMatches, pairById, players],
@@ -198,7 +200,21 @@ export default function Home() {
               <Badge className="bg-brand/10 text-brand">Actual</Badge>
             )}
           </div>
-          <span className="text-sm text-neutral-500">{done}/2 partidos</span>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-neutral-500">{done}/2 partidos</span>
+            {isViewingCurrent && currentDay && (
+              <button
+                type="button"
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-neutral-100 text-neutral-700 transition active:bg-neutral-200 disabled:opacity-40"
+                disabled={sharing}
+                onClick={onShareCurrentDay}
+                aria-label="Compartir jornada"
+                title="Compartir jornada"
+              >
+                <IconShare className="h-4 w-4" />
+              </button>
+            )}
+          </div>
         </div>
 
         {!isViewingCurrent && (
@@ -211,12 +227,6 @@ export default function Home() {
             }}
           >
             Ir a la jornada actual
-          </Button>
-        )}
-
-        {isViewingCurrent && currentDay && (
-          <Button variant="secondary" full disabled={sharing} onClick={onShareCurrentDay}>
-            {sharing ? 'Generando imagen…' : 'Compartir jornada'}
           </Button>
         )}
 

@@ -2,6 +2,7 @@ interface ShareDayMatch {
   pairA: string
   pairB: string
   ballDuty: string
+  scoreLine?: string
 }
 
 interface ShareDayCardProps {
@@ -46,6 +47,11 @@ export default function ShareDayCard({
                 vs
               </p>
               <p className="text-2xl font-black leading-tight text-[#14532d]">{match.pairB}</p>
+              {match.scoreLine && (
+                <div className="mt-4 rounded-2xl bg-[#14532d]/6 px-4 py-3 text-center text-base font-bold text-[#14532d]">
+                  {match.scoreLine}
+                </div>
+              )}
               <div className="mt-4 rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-[#334155] ring-1 ring-[#e2e8f0]">
                 Pelotas: <span className="text-[#14532d]">{match.ballDuty}</span>
               </div>

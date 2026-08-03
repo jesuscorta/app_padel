@@ -1,5 +1,6 @@
 import { playerName } from '../lib/LeagueContext'
 import { pairLabel } from '../lib/format'
+import { computeMatchScoreFromMatch } from '../lib/scoring'
 import { Badge, cx } from './ui'
 import type { BallDuty, Match, MatchPlayer, Pair, Player } from '../types'
 
@@ -30,6 +31,7 @@ export default function HistoryMatchRow({
 }: HistoryMatchRowProps) {
   const winnerPair = match.winner_pair_id === pairA.id ? pairA : match.winner_pair_id === pairB.id ? pairB : null
   const substitutions = substitutionLabels(players, lineup)
+  const score = computeMatchScoreFromMatch(match)
 
   return (
     <div className="rounded-xl border border-neutral-200 bg-white px-3 py-3">
@@ -40,6 +42,7 @@ export default function HistoryMatchRow({
           </p>
           <p className={cx('mt-1 text-xs', winnerPair ? 'text-neutral-600' : 'text-neutral-400')}>
             {winnerPair ? `Ganaron ${pairLabel(players, winnerPair)}` : 'Pendiente'}
+            {score ? ` · ${score.scoreLine}` : ''}
           </p>
         </div>
         {winnerPair ? <Badge className="bg-brand/10 text-brand">Cerrado</Badge> : <Badge className="bg-neutral-200 text-neutral-600">Pendiente</Badge>}

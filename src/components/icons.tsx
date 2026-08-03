@@ -77,3 +77,13 @@ export function IconChevronRight({ className }: IconProps) {
     </svg>
   )
 }
+
+export function IconShare({ className }: IconProps) {
+  return (
+    <svg {...base(className)}>
+      <path d="M12 16V4" />
+      <path d="m7 9 5-5 5 5" />
+      <path d="M5 20h14" />
+    </svg>
+  )
+}

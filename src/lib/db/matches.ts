@@ -1,14 +1,56 @@
 import { supabase } from '../supabase'
+import { computeMatchScore, type MatchScoreInput } from '../scoring'
+import type { Match } from '../../types'
 
-/** Registra (o corrige) el ganador de un partido. */
-export async function setWinner(matchId: string, pairId: string): Promise<void> {
-  const { error } = await supabase.from('matches').update({ winner_pair_id: pairId }).eq('id', matchId)
+/** Guarda el marcador del partido y calcula el ganador automáticamente. */
+export async function saveMatchScore(match: Match, score: MatchScoreInput): Promise<void> {
+  const summary = computeMatchScore(score)
+  if (!summary) throw new Error('Marcador inválido')
+
+  const winnerPairId = summary.winnerSide === 'a' ? match.pair_a_id : match.pair_b_id
+  const { error } = await supabase
+    .from('matches')
+    .update({
+      set1_a: score.set1A,
+      set1_b: score.set1B,
+      set1_tb_a: score.set1TbA,
+      set1_tb_b: score.set1TbB,
+      set2_a: score.set2A,
+      set2_b: score.set2B,
+      set2_tb_a: score.set2TbA,
+      set2_tb_b: score.set2TbB,
+      set3_a: score.set3A,
+      set3_b: score.set3B,
+      set3_tb_a: score.set3TbA,
+      set3_tb_b: score.set3TbB,
+      set3_incomplete: score.set3Incomplete,
+      winner_pair_id: winnerPairId,
+    })
+    .eq('id', match.id)
   if (error) throw error
 }
 
-/** Quita el resultado de un partido (corrección). */
-export async function clearWinner(matchId: string): Promise<void> {
-  const { error } = await supabase.from('matches').update({ winner_pair_id: null }).eq('id', matchId)
+/** Quita el marcador de un partido (corrección). */
+export async function clearMatchScore(matchId: string): Promise<void> {
+  const { error } = await supabase
+    .from('matches')
+    .update({
+      set1_a: null,
+      set1_b: null,
+      set1_tb_a: null,
+      set1_tb_b: null,
+      set2_a: null,
+      set2_b: null,
+      set2_tb_a: null,
+      set2_tb_b: null,
+      set3_a: null,
+      set3_b: null,
+      set3_tb_a: null,
+      set3_tb_b: null,
+      set3_incomplete: false,
+      winner_pair_id: null,
+    })
+    .eq('id', matchId)
   if (error) throw error
 }
 

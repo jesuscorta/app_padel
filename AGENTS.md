@@ -20,7 +20,10 @@ PWA de gestión de liga de pádel entre amigos.
 - Ninguna pareja puede repetirse dentro de la misma liga
 - En cada ronda, las 4 parejas juegan todos contra todos: 6 partidos
 - Cada jornada tiene 2 partidos
-- Solo se registra el ganador de cada partido
+- Cada partido puede registrar hasta 3 sets
+- El tercer set puede quedar incompleto
+- En un tercer set incompleto nunca habrá empate en juegos
+- El ganador del partido se calcula automáticamente a partir del marcador
 - Los puntos individuales van al jugador que realmente jugó
 - Los sustitutos deben existir previamente en la app
 - Los sustitutos no alteran la pareja temporal de la ronda

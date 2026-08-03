@@ -17,7 +17,7 @@ PWA mobile-first para gestionar una liga de pádel entre amigos.
 - En cada ronda se generan 4 parejas temporales sin repetir pareja en toda la liga
 - En cada ronda hay 3 jornadas de 2 partidos (6 partidos por ronda)
 - Pantalla principal mostrando la jornada activa dentro de la ronda activa
-- Registrar únicamente el ganador
+- Registrar marcador por sets y calcular ganador automáticamente
 - Corregir resultados
 - Ausencias con sustitutos ya creados, sin modificar la pareja temporal de esa ronda
 - Clasificación individual:
@@ -40,6 +40,10 @@ PWA mobile-first para gestionar una liga de pádel entre amigos.
 - Dentro de cada ronda, las 4 parejas juegan todos contra todos: 6 partidos
 - Cada jornada contiene 2 partidos
 - Solo se registra el ganador de cada partido
+- Cada partido puede registrar hasta 3 sets
+- El tercer set puede quedar incompleto
+- En un tercer set incompleto nunca habrá empate en juegos
+- El ganador del partido se calcula automáticamente a partir del marcador
 - Los puntos individuales van al jugador que realmente jugó
 - Los sustitutos deben existir previamente en la app
 - Los sustitutos no alteran la pareja temporal de esa ronda

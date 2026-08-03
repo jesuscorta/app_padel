@@ -1,10 +1,11 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { playerName } from '../lib/LeagueContext'
-import { advanceScheduleIfComplete, clearWinner, setWinner } from '../lib/db/matches'
+import { advanceScheduleIfComplete, clearMatchScore, saveMatchScore } from '../lib/db/matches'
+import { computeMatchScore, matchToScoreInput, validateMatchScore, type MatchScoreInput } from '../lib/scoring'
 import { setActualPlayer } from '../lib/db/substitutions'
 import { pairLabel } from '../lib/format'
-import { Badge, BusyOverlay, Button, Card, ConfirmSheet, Sheet, cx } from './ui'
+import { Badge, BusyOverlay, Button, Card, Sheet, cx } from './ui'
 import { IconBall } from './icons'
 import type { BallDuty, Match, MatchPlayer, Pair, Player } from '../types'
 
@@ -20,11 +21,73 @@ interface MatchCardProps {
   onChanged: () => Promise<void> | void
 }
 
+interface ScoreFormState {
+  set1A: string
+  set1B: string
+  set1TbA: string
+  set1TbB: string
+  set2A: string
+  set2B: string
+  set2TbA: string
+  set2TbB: string
+  set3A: string
+  set3B: string
+  set3TbA: string
+  set3TbB: string
+  set3Incomplete: boolean
+}
+
 /** "Ana" o "Lucía (por Ana)" cuando juega un sustituto. */
 function slotLabel(players: Player[], slot: MatchPlayer): string {
   const actual = playerName(players, slot.actual_player_id)
   if (slot.actual_player_id === slot.titular_id) return actual
   return `${actual} (por ${playerName(players, slot.titular_id)})`
+}
+
+function scoreInputToForm(score: MatchScoreInput): ScoreFormState {
+  return {
+    set1A: score.set1A?.toString() ?? '',
+    set1B: score.set1B?.toString() ?? '',
+    set1TbA: score.set1TbA?.toString() ?? '',
+    set1TbB: score.set1TbB?.toString() ?? '',
+    set2A: score.set2A?.toString() ?? '',
+    set2B: score.set2B?.toString() ?? '',
+    set2TbA: score.set2TbA?.toString() ?? '',
+    set2TbB: score.set2TbB?.toString() ?? '',
+    set3A: score.set3A?.toString() ?? '',
+    set3B: score.set3B?.toString() ?? '',
+    set3TbA: score.set3TbA?.toString() ?? '',
+    set3TbB: score.set3TbB?.toString() ?? '',
+    set3Incomplete: score.set3Incomplete,
+  }
+}
+
+function formValueToNumber(value: string): number | null {
+  return value.trim() === '' ? null : Number(value)
+}
+
+function scoreFormToInput(form: ScoreFormState): MatchScoreInput {
+  return {
+    set1A: formValueToNumber(form.set1A),
+    set1B: formValueToNumber(form.set1B),
+    set1TbA: formValueToNumber(form.set1TbA),
+    set1TbB: formValueToNumber(form.set1TbB),
+    set2A: formValueToNumber(form.set2A),
+    set2B: formValueToNumber(form.set2B),
+    set2TbA: formValueToNumber(form.set2TbA),
+    set2TbB: formValueToNumber(form.set2TbB),
+    set3A: formValueToNumber(form.set3A),
+    set3B: formValueToNumber(form.set3B),
+    set3TbA: formValueToNumber(form.set3TbA),
+    set3TbB: formValueToNumber(form.set3TbB),
+    set3Incomplete: form.set3Incomplete,
+  }
+}
+
+function winnerLabel(pairA: Pair, pairB: Pair, players: Player[], winnerPairId: string | null): string {
+  if (winnerPairId === pairA.id) return pairLabel(players, pairA)
+  if (winnerPairId === pairB.id) return pairLabel(players, pairB)
+  return '—'
 }
 
 export default function MatchCard({
@@ -37,11 +100,12 @@ export default function MatchCard({
   readOnly,
   onChanged,
 }: MatchCardProps) {
-  const [pendingWinner, setPendingWinner] = useState<Pair | null>(null)
-  const [correctOpen, setCorrectOpen] = useState(false)
+  const [scoreOpen, setScoreOpen] = useState(false)
   const [absencePair, setAbsencePair] = useState<Pair | null>(null)
   const [selectedSlotId, setSelectedSlotId] = useState<string | null>(null)
   const [lineupError, setLineupError] = useState<string | null>(null)
+  const [scoreError, setScoreError] = useState<string | null>(null)
+  const [scoreForm, setScoreForm] = useState<ScoreFormState>(() => scoreInputToForm(matchToScoreInput(match)))
   const [saving, setSaving] = useState(false)
 
   const winner = match.winner_pair_id
@@ -51,31 +115,44 @@ export default function MatchCard({
   const slotsB = [pairB.player1_id, pairB.player2_id]
     .map((titularId) => lineup.find((l) => l.pair_id === pairB.id && l.titular_id === titularId))
     .filter(Boolean) as MatchPlayer[]
-  const loser = winner === pairA.id ? pairB : winner === pairB.id ? pairA : null
   const selectedSlot = lineup.find((slot) => slot.id === selectedSlotId) ?? null
   const selectedPair = absencePair
   const selectedPairSlots =
     selectedPair?.id === pairA.id ? slotsA : selectedPair?.id === pairB.id ? slotsB : []
   const substitutes = players.filter((p) => p.role === 'sustituto' && p.active)
+  const scoreInput = useMemo(() => scoreFormToInput(scoreForm), [scoreForm])
+  const scoreValidation = useMemo(() => validateMatchScore(scoreInput), [scoreInput])
+  const scoreSummary = useMemo(() => computeMatchScore(scoreInput), [scoreInput])
 
-  async function chooseWinner(pair: Pair) {
+  function openScoreEditor() {
+    setScoreForm(scoreInputToForm(matchToScoreInput(match)))
+    setScoreError(null)
+    setScoreOpen(true)
+  }
+
+  async function onSaveScore() {
+    const validationError = validateMatchScore(scoreInput)
+    if (validationError) {
+      setScoreError(validationError)
+      return
+    }
     setSaving(true)
     try {
-      await setWinner(match.id, pair.id)
+      await saveMatchScore(match, scoreInput)
       await advanceScheduleIfComplete(match.day_id, match.round_id)
-      setPendingWinner(null)
-      setCorrectOpen(false)
+      setScoreError(null)
+      setScoreOpen(false)
       await onChanged()
     } finally {
       setSaving(false)
     }
   }
 
-  async function onClear() {
+  async function onClearScore() {
     setSaving(true)
     try {
-      await clearWinner(match.id)
-      setCorrectOpen(false)
+      await clearMatchScore(match.id)
+      setScoreOpen(false)
       await onChanged()
     } finally {
       setSaving(false)
@@ -121,8 +198,7 @@ export default function MatchCard({
         )}
       >
         <button
-          disabled={readOnly || saving}
-          onClick={() => (winner ? setCorrectOpen(true) : setPendingWinner(pair))}
+          disabled
           className="w-full text-center"
         >
           {slots.map((s) => (
@@ -156,7 +232,7 @@ export default function MatchCard({
         {readOnly ? (
           <Badge className="bg-neutral-200 text-neutral-600">Solo lectura</Badge>
         ) : (
-          <p className="text-sm font-semibold text-brand">Toca la pareja ganadora</p>
+          <p className="text-sm font-semibold text-brand">Añade el marcador del partido</p>
         )}
       </div>
       <div className="flex items-stretch gap-2">
@@ -165,7 +241,14 @@ export default function MatchCard({
         {renderPair(pairB, slotsB)}
       </div>
 
+      {!readOnly && (
+        <Button full className="mt-3" onClick={openScoreEditor}>
+          {winner ? 'Editar resultado' : 'Añadir resultado'}
+        </Button>
+      )}
+
       <div className="mt-3 flex items-center justify-between text-xs text-neutral-500">
+        <span className="font-semibold text-neutral-700">{scoreSummary?.scoreLine ?? 'Sin marcador'}</span>
         <span className="flex items-center gap-1.5">
           <IconBall className="h-4 w-4 text-brand" />
           Pelotas:{' '}
@@ -173,40 +256,149 @@ export default function MatchCard({
             {ballDuty ? playerName(players, ballDuty.player_id) : '—'}
           </span>
         </span>
-        {winner && !readOnly && (
-          <button
-            className="min-h-8 rounded-lg px-2 font-semibold text-brand active:bg-neutral-100"
-            onClick={() => setCorrectOpen(true)}
-          >
-            Corregir
-          </button>
-        )}
       </div>
 
-      <ConfirmSheet
-        open={pendingWinner !== null}
-        title="Registrar ganador"
-        message={
-          pendingWinner ? `¿Ganaron ${pairLabel(players, pendingWinner)}?` : undefined
-        }
-        confirmLabel="Sí, ganaron"
-        onConfirm={() => pendingWinner && chooseWinner(pendingWinner)}
-        onCancel={() => setPendingWinner(null)}
-      />
+      <Sheet open={scoreOpen} onClose={() => setScoreOpen(false)} title="Resultado del partido">
+        <div className="space-y-4">
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-2 rounded-xl bg-neutral-50 px-4 py-3 text-sm font-semibold text-neutral-700">
+              <p>{pairLabel(players, pairA)}</p>
+              <p className="text-right">{pairLabel(players, pairB)}</p>
+            </div>
 
-      <Sheet open={correctOpen} onClose={() => setCorrectOpen(false)} title="Corregir resultado">
-        <div className="space-y-2">
-          {loser && (
-            <Button full disabled={saving} onClick={() => chooseWinner(loser)}>
-              Ganaron {pairLabel(players, loser)}
-            </Button>
+            {[
+              ['Set 1', 'set1A', 'set1B', 'set1TbA', 'set1TbB'],
+              ['Set 2', 'set2A', 'set2B', 'set2TbA', 'set2TbB'],
+              ['Set 3', 'set3A', 'set3B', 'set3TbA', 'set3TbB'],
+            ].map(([label, aKey, bKey, tbAKey, tbBKey]) => (
+              <div key={label} className="space-y-2">
+                <p className="text-sm font-semibold text-neutral-600">{label}</p>
+                <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
+                  <input
+                    type="number"
+                    min="0"
+                    value={String(scoreForm[aKey as keyof ScoreFormState] ?? '')}
+                    onChange={(event) =>
+                      setScoreForm((current) => ({
+                        ...current,
+                        [aKey]: event.target.value,
+                      }))
+                    }
+                    className="min-h-11 rounded-xl border border-neutral-300 px-3 text-center outline-none focus:border-brand focus:ring-2 focus:ring-brand/30"
+                  />
+                  <span className="text-sm font-bold text-neutral-400">-</span>
+                  <input
+                    type="number"
+                    min="0"
+                    value={String(scoreForm[bKey as keyof ScoreFormState] ?? '')}
+                    onChange={(event) =>
+                      setScoreForm((current) => ({
+                        ...current,
+                        [bKey]: event.target.value,
+                      }))
+                    }
+                    className="min-h-11 rounded-xl border border-neutral-300 px-3 text-center outline-none focus:border-brand focus:ring-2 focus:ring-brand/30"
+                  />
+                </div>
+
+                {Number(scoreForm[aKey as keyof ScoreFormState]) === 7 && Number(scoreForm[bKey as keyof ScoreFormState]) === 6 && (
+                  <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
+                    <input
+                      type="number"
+                      min="0"
+                      value={String(scoreForm[tbAKey as keyof ScoreFormState] ?? '')}
+                      onChange={(event) =>
+                        setScoreForm((current) => ({
+                          ...current,
+                          [tbAKey]: event.target.value,
+                        }))
+                      }
+                      className="min-h-10 rounded-xl border border-neutral-300 px-3 text-center outline-none focus:border-brand focus:ring-2 focus:ring-brand/30"
+                    />
+                    <span className="text-xs font-bold text-neutral-400">TB</span>
+                    <input
+                      type="number"
+                      min="0"
+                      value={String(scoreForm[tbBKey as keyof ScoreFormState] ?? '')}
+                      onChange={(event) =>
+                        setScoreForm((current) => ({
+                          ...current,
+                          [tbBKey]: event.target.value,
+                        }))
+                      }
+                      className="min-h-10 rounded-xl border border-neutral-300 px-3 text-center outline-none focus:border-brand focus:ring-2 focus:ring-brand/30"
+                    />
+                  </div>
+                )}
+
+                {Number(scoreForm[aKey as keyof ScoreFormState]) === 6 && Number(scoreForm[bKey as keyof ScoreFormState]) === 7 && (
+                  <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
+                    <input
+                      type="number"
+                      min="0"
+                      value={String(scoreForm[tbAKey as keyof ScoreFormState] ?? '')}
+                      onChange={(event) =>
+                        setScoreForm((current) => ({
+                          ...current,
+                          [tbAKey]: event.target.value,
+                        }))
+                      }
+                      className="min-h-10 rounded-xl border border-neutral-300 px-3 text-center outline-none focus:border-brand focus:ring-2 focus:ring-brand/30"
+                    />
+                    <span className="text-xs font-bold text-neutral-400">TB</span>
+                    <input
+                      type="number"
+                      min="0"
+                      value={String(scoreForm[tbBKey as keyof ScoreFormState] ?? '')}
+                      onChange={(event) =>
+                        setScoreForm((current) => ({
+                          ...current,
+                          [tbBKey]: event.target.value,
+                        }))
+                      }
+                      className="min-h-10 rounded-xl border border-neutral-300 px-3 text-center outline-none focus:border-brand focus:ring-2 focus:ring-brand/30"
+                    />
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+
+          <label className="flex items-center gap-3 rounded-xl bg-neutral-50 px-4 py-3 text-sm font-medium text-neutral-700">
+            <input
+              type="checkbox"
+              checked={scoreForm.set3Incomplete}
+              onChange={(event) =>
+                setScoreForm((current) => ({ ...current, set3Incomplete: event.target.checked }))
+              }
+            />
+            Tercer set incompleto
+          </label>
+
+          {scoreError && <p className="text-sm font-medium text-red-600">{scoreError}</p>}
+
+          {scoreSummary && (
+            <div className="rounded-xl bg-brand/5 px-4 py-3 text-sm text-brand">
+              <p className="font-semibold">
+                Ganador automático: {winnerLabel(pairA, pairB, players, scoreSummary.winnerSide === 'a' ? pairA.id : pairB.id)}
+              </p>
+              <p className="mt-1 text-xs text-brand/80">Marcador: {scoreSummary.scoreLine}</p>
+            </div>
           )}
-          <Button variant="danger" full disabled={saving} onClick={onClear}>
-            Quitar resultado
-          </Button>
-          <Button variant="secondary" full onClick={() => setCorrectOpen(false)}>
-            Cancelar
-          </Button>
+
+          <div className="flex gap-3">
+            {winner && (
+              <Button variant="danger" full disabled={saving} onClick={onClearScore}>
+                Quitar resultado
+              </Button>
+            )}
+            <Button variant="secondary" full onClick={() => setScoreOpen(false)}>
+              Cancelar
+            </Button>
+            <Button full disabled={saving || Boolean(scoreValidation)} onClick={onSaveScore}>
+              Guardar
+            </Button>
+          </div>
         </div>
       </Sheet>
 

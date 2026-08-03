@@ -1,4 +1,5 @@
 import type { Match, MatchPlayer, Pair, Player, PlayerRole } from '../types'
+import { computeMatchScoreFromMatch } from './scoring'
 
 export type StandingsMode = 'titulares' | 'todos'
 
@@ -9,6 +10,10 @@ export interface StandingRow {
   played: number
   wins: number
   points: number
+  setsFor: number
+  setsAgainst: number
+  gamesFor: number
+  gamesAgainst: number
   winRate: number
 }
 
@@ -59,12 +64,17 @@ export function computeStandings({
       played: 0,
       wins: 0,
       points: 0,
+      setsFor: 0,
+      setsAgainst: 0,
+      gamesFor: 0,
+      gamesAgainst: 0,
       winRate: 0,
     })
   }
 
   for (const match of relevantMatches) {
     if (!match.winner_pair_id) continue
+    const score = computeMatchScoreFromMatch(match)
     const slots = relevantMatchPlayers.filter((slot) => slot.match_id === match.id)
     const playedIds = [...new Set(slots.map((slot) => slot.actual_player_id))]
     for (const playerId of playedIds) {
@@ -88,6 +98,34 @@ export function computeStandings({
       row.wins += 1
       row.points += 2
     }
+
+    if (score) {
+      const loserIds = [
+        ...new Set(
+          slots
+            .filter((slot) => slot.pair_id !== match.winner_pair_id)
+            .map((slot) => slot.actual_player_id),
+        ),
+      ]
+
+      for (const playerId of winnerIds) {
+        const row = rows.get(playerId)
+        if (!row) continue
+        row.setsFor += score.winnerSide === 'a' ? score.setsA : score.setsB
+        row.setsAgainst += score.winnerSide === 'a' ? score.setsB : score.setsA
+        row.gamesFor += score.winnerSide === 'a' ? score.gamesA : score.gamesB
+        row.gamesAgainst += score.winnerSide === 'a' ? score.gamesB : score.gamesA
+      }
+
+      for (const playerId of loserIds) {
+        const row = rows.get(playerId)
+        if (!row) continue
+        row.setsFor += score.winnerSide === 'a' ? score.setsB : score.setsA
+        row.setsAgainst += score.winnerSide === 'a' ? score.setsA : score.setsB
+        row.gamesFor += score.winnerSide === 'a' ? score.gamesB : score.gamesA
+        row.gamesAgainst += score.winnerSide === 'a' ? score.gamesA : score.gamesB
+      }
+    }
   }
 
   return [...rows.values()]
@@ -97,6 +135,13 @@ export function computeStandings({
     }))
     .sort((a, b) => {
       if (b.points !== a.points) return b.points - a.points
+      const setDiffA = a.setsFor - a.setsAgainst
+      const setDiffB = b.setsFor - b.setsAgainst
+      if (setDiffB !== setDiffA) return setDiffB - setDiffA
+      const gameDiffA = a.gamesFor - a.gamesAgainst
+      const gameDiffB = b.gamesFor - b.gamesAgainst
+      if (gameDiffB !== gameDiffA) return gameDiffB - gameDiffA
+      if (b.gamesFor !== a.gamesFor) return b.gamesFor - a.gamesFor
       if (b.winRate !== a.winRate) return b.winRate - a.winRate
       if (a.played !== b.played) return a.played - b.played
       return a.name.localeCompare(b.name)
