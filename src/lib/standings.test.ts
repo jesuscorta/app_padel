@@ -15,16 +15,17 @@ const players: Player[] = [
 ]
 
 const pairs: Pair[] = [
-  { id: 'p1', league_id: 'l1', player1_id: 't1', player2_id: 't2', position: 1 },
-  { id: 'p2', league_id: 'l1', player1_id: 't3', player2_id: 't4', position: 2 },
-  { id: 'p3', league_id: 'l1', player1_id: 't5', player2_id: 't6', position: 3 },
-  { id: 'p4', league_id: 'l1', player1_id: 't7', player2_id: 't8', position: 4 },
+  { id: 'p1', league_id: 'l1', round_id: 'r1', player1_id: 't1', player2_id: 't2', position: 1 },
+  { id: 'p2', league_id: 'l1', round_id: 'r1', player1_id: 't3', player2_id: 't4', position: 2 },
+  { id: 'p3', league_id: 'l1', round_id: 'r1', player1_id: 't5', player2_id: 't6', position: 3 },
+  { id: 'p4', league_id: 'l1', round_id: 'r1', player1_id: 't7', player2_id: 't8', position: 4 },
 ]
 
 const matches: Match[] = [
   {
     id: 'm1',
     round_id: 'r1',
+    day_id: 'd1',
     position: 1,
     pair_a_id: 'p1',
     pair_b_id: 'p2',
@@ -33,7 +34,8 @@ const matches: Match[] = [
   },
   {
     id: 'm2',
-    round_id: 'r1',
+    round_id: 'r2',
+    day_id: 'd2',
     position: 2,
     pair_a_id: 'p3',
     pair_b_id: 'p4',
@@ -75,5 +77,19 @@ describe('computeStandings', () => {
     const standings = computeStandings({ players, pairs, matches, matchPlayers, mode: 'todos' })
     expect(standings[0].playerId).toBe('t1')
     expect(standings[1].playerId).toBe('t2')
+  })
+
+  it('puede calcular la clasificación de una ronda concreta', () => {
+    const standings = computeStandings({
+      players,
+      pairs,
+      matches,
+      matchPlayers,
+      mode: 'todos',
+      roundId: 'r2',
+    })
+
+    expect(standings.find((row) => row.playerId === 's1')?.points).toBe(3)
+    expect(standings.find((row) => row.playerId === 't1')?.points).toBe(0)
   })
 })

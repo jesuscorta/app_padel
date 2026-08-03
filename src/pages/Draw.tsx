@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useLeague } from '../lib/LeagueContext'
 import { createLeague } from '../lib/db/leagues'
-import { drawPairs } from '../lib/draw'
+import { shuffle } from '../lib/draw'
+import { generateRoundPairings } from '../lib/schedule'
 import { Button, Card, ConfirmSheet, Spinner } from '../components/ui'
 import type { Player } from '../types'
 
@@ -12,15 +13,17 @@ export default function Draw() {
   const titulares = players.filter((p) => p.role === 'titular' && p.active)
   const ready = !loading && !active && titulares.length === 8
 
-  const [pairs, setPairs] = useState<[Player, Player][] | null>(null)
+  const [order, setOrder] = useState<Player[] | null>(null)
   const [name, setName] = useState(`Liga ${new Date().getFullYear()}`)
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const playerById = new Map(titulares.map((player) => [player.id, player]))
+  const rounds = order ? generateRoundPairings(order.map((player) => player.id)) : []
 
   // Sorteo inicial automático en cuanto hay 8 titulares
   useEffect(() => {
-    if (ready) setPairs((prev) => prev ?? drawPairs(titulares))
+    if (ready) setOrder((prev) => prev ?? shuffle(titulares))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ready])
 
@@ -31,7 +34,7 @@ export default function Draw() {
       <Card className="space-y-3 text-center">
         <p className="font-semibold">Ya hay una liga activa</p>
         <p className="text-sm text-neutral-500">
-          Las parejas están fijas hasta que finalice la liga actual.
+          La liga actual ya tiene generadas sus 7 rondas.
         </p>
         <Link to="/">
           <Button full>Ir a la jornada</Button>
@@ -55,14 +58,11 @@ export default function Draw() {
   }
 
   async function onConfirm() {
-    if (!pairs) return
+    if (!order) return
     setSaving(true)
     setError(null)
     try {
-      await createLeague(
-        name,
-        pairs.map(([a, b]) => ({ player1Id: a.id, player2Id: b.id })),
-      )
+      await createLeague(name, order.map((player) => player.id))
       await refresh()
       navigate('/')
     } catch (e) {
@@ -75,10 +75,10 @@ export default function Draw() {
   return (
     <div className="space-y-4">
       <div className="space-y-1">
-        <h2 className="text-lg font-bold">Sorteo de parejas</h2>
+        <h2 className="text-lg font-bold">Sorteo de la liga</h2>
         <p className="text-sm text-neutral-500">
-          Repite el sorteo todas las veces que quieras. Al confirmar, las parejas quedarán fijas
-          hasta el final de la liga.
+          Repite el sorteo todas las veces que quieras. Al confirmar se generarán las 7 rondas
+          completas, sin repetir ninguna pareja.
         </p>
       </div>
 
@@ -92,33 +92,40 @@ export default function Draw() {
       </label>
 
       <div className="space-y-3">
-        {pairs?.map(([a, b], i) => (
-          <Card key={`${a.id}-${b.id}`} className="flex items-center gap-3">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand text-sm font-bold text-white">
-              {i + 1}
-            </span>
-            <span className="font-semibold">
-              {a.name} <span className="font-normal text-neutral-400">&</span> {b.name}
-            </span>
-          </Card>
+        {rounds.map((round) => (
+          <div key={round.round} className="space-y-2">
+            <p className="text-sm font-semibold text-neutral-600">Ronda {round.round}</p>
+            {round.pairs.map(([player1Id, player2Id], index) => (
+              <Card key={`${round.round}-${index}`} className="flex items-center gap-3">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand text-sm font-bold text-white">
+                  {index + 1}
+                </span>
+                <span className="font-semibold">
+                  {playerById.get(player1Id)?.name ?? '—'}{' '}
+                  <span className="font-normal text-neutral-400">&</span>{' '}
+                  {playerById.get(player2Id)?.name ?? '—'}
+                </span>
+              </Card>
+            ))}
+          </div>
         ))}
       </div>
 
       {error && <p className="text-sm font-medium text-red-600">{error}</p>}
 
       <div className="flex gap-3">
-        <Button variant="secondary" full disabled={saving} onClick={() => setPairs(drawPairs(titulares))}>
+        <Button variant="secondary" full disabled={saving} onClick={() => setOrder(shuffle(titulares))}>
           Repetir sorteo
         </Button>
-        <Button full disabled={saving || !name.trim() || !pairs} onClick={() => setConfirmOpen(true)}>
-          Confirmar parejas
+        <Button full disabled={saving || !name.trim() || !order} onClick={() => setConfirmOpen(true)}>
+          Confirmar liga
         </Button>
       </div>
 
       <ConfirmSheet
         open={confirmOpen}
-        title="¿Fijar estas parejas?"
-        message="Se creará la liga y las parejas no podrán modificarse hasta que finalice."
+        title="¿Crear esta liga?"
+        message="Se crearán las 7 rondas completas y no se repetirá ninguna pareja dentro de la liga."
         confirmLabel="Crear liga"
         onConfirm={onConfirm}
         onCancel={() => setConfirmOpen(false)}

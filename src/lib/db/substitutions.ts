@@ -11,7 +11,7 @@ export async function createSubstitute(name: string): Promise<string> {
   return data.id as string
 }
 
-/** Sustituye temporalmente al titular en un slot concreto del partido. */
+/** Sustituye temporalmente al titular en un slot concreto del partido sin tocar la pareja de la ronda. */
 export async function setActualPlayer(
   matchId: string,
   pairId: string,

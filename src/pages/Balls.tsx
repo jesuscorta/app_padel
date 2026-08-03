@@ -57,7 +57,7 @@ export default function Balls() {
 
       {active.rounds.map((round) => (
         <section key={round.id} className="space-y-2">
-          <h3 className="font-semibold text-neutral-600">Jornada {round.number}</h3>
+          <h3 className="font-semibold text-neutral-600">Ronda {round.number}</h3>
           {active.matches
             .filter((m) => m.round_id === round.id)
             .map((m) => {

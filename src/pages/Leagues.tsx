@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import MatchCard from '../components/MatchCard'
 import { useLeague } from '../lib/LeagueContext'
-import { finishLeague, getLeagueData, listFinishedLeagues } from '../lib/db/leagues'
+import { deleteLeague, finishLeague, getLeagueData, listFinishedLeagues } from '../lib/db/leagues'
 import { computeStandings } from '../lib/standings'
 import {
   Badge,
@@ -23,6 +23,7 @@ export default function Leagues() {
   const [selectedTitle, setSelectedTitle] = useState<string | null>(null)
   const [detailLoading, setDetailLoading] = useState(false)
   const [finishOpen, setFinishOpen] = useState(false)
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string; active: boolean } | null>(null)
   const [saving, setSaving] = useState(false)
 
   const activeComplete = Boolean(active && active.rounds.every((round) => round.status === 'finished'))
@@ -63,6 +64,23 @@ export default function Leagues() {
     }
   }
 
+  async function onDeleteLeague() {
+    if (!deleteTarget) return
+    setSaving(true)
+    try {
+      await deleteLeague(deleteTarget.id)
+      if (deleteTarget.active) await refresh()
+      await loadArchive()
+      setDeleteTarget(null)
+      if (selected?.league.id === deleteTarget.id) {
+        setSelected(null)
+        setSelectedTitle(null)
+      }
+    } finally {
+      setSaving(false)
+    }
+  }
+
   const selectedStandings = useMemo(() => {
     if (!selected) return []
     return computeStandings({
@@ -87,7 +105,7 @@ export default function Leagues() {
               <div>
                 <p className="font-semibold">{active.league.name}</p>
                 <p className="text-sm text-neutral-500">
-                  {active.rounds.filter((round) => round.status === 'finished').length}/3 jornadas cerradas
+                  {active.rounds.filter((round) => round.status === 'finished').length}/7 rondas cerradas
                 </p>
               </div>
               <Badge className={activeComplete ? 'bg-green-100 text-green-800' : 'bg-brand/10 text-brand'}>
@@ -96,15 +114,39 @@ export default function Leagues() {
             </div>
 
             {activeComplete ? (
-              <Button full disabled={saving} onClick={() => setFinishOpen(true)}>
-                Finalizar liga y mover al histórico
-              </Button>
-            ) : (
-              <Link to="/">
-                <Button full variant="secondary">
-                  Volver a la jornada actual
+              <div className="space-y-2">
+                <Button full disabled={saving} onClick={() => setFinishOpen(true)}>
+                  Finalizar liga y mover al histórico
                 </Button>
-              </Link>
+                <Button
+                  full
+                  variant="danger"
+                  disabled={saving}
+                  onClick={() =>
+                    setDeleteTarget({ id: active.league.id, name: active.league.name, active: true })
+                  }
+                >
+                  Eliminar liga actual
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <Link to="/">
+                  <Button full variant="secondary">
+                    Volver a la ronda actual
+                  </Button>
+                </Link>
+                <Button
+                  full
+                  variant="danger"
+                  disabled={saving}
+                  onClick={() =>
+                    setDeleteTarget({ id: active.league.id, name: active.league.name, active: true })
+                  }
+                >
+                  Eliminar liga actual
+                </Button>
+              </div>
             )}
           </Card>
         ) : (
@@ -135,9 +177,17 @@ export default function Leagues() {
                   Cerrada {league.finished_at ? new Date(league.finished_at).toLocaleDateString('es-ES') : '—'}
                 </p>
               </div>
-              <Button variant="secondary" onClick={() => openLeague(league)}>
-                Ver detalle
-              </Button>
+              <div className="flex gap-2">
+                <Button variant="secondary" onClick={() => openLeague(league)}>
+                  Ver detalle
+                </Button>
+                <Button
+                  variant="danger"
+                  onClick={() => setDeleteTarget({ id: league.id, name: league.name, active: false })}
+                >
+                  Eliminar
+                </Button>
+              </div>
             </Card>
           ))
         )}
@@ -152,13 +202,27 @@ export default function Leagues() {
         onCancel={() => setFinishOpen(false)}
       />
 
+      <ConfirmSheet
+        open={deleteTarget !== null}
+        title="Eliminar liga"
+        message={
+          deleteTarget
+            ? `Se borrará por completo "${deleteTarget.name}" con sus rondas, parejas, partidos y resultados.`
+            : undefined
+        }
+        confirmLabel="Sí, eliminar"
+        danger
+        onConfirm={onDeleteLeague}
+        onCancel={() => setDeleteTarget(null)}
+      />
+
       <Sheet open={selectedTitle !== null} onClose={() => { setSelected(null); setSelectedTitle(null) }} title={selectedTitle ?? 'Detalle de liga'}>
         {detailLoading || !selected ? (
           <Spinner />
         ) : (
           <div className="space-y-5">
             <section className="space-y-2">
-              <p className="text-sm font-semibold text-neutral-600">Clasificación final</p>
+              <p className="text-sm font-semibold text-neutral-600">Clasificación global</p>
               {selectedStandings.map((row, index) => (
                 <div key={row.playerId} className="flex items-center justify-between rounded-xl bg-neutral-50 px-4 py-3">
                   <div className="flex items-center gap-3">
@@ -173,28 +237,71 @@ export default function Leagues() {
               ))}
             </section>
 
+            <section className="space-y-4">
+              <p className="text-sm font-semibold text-neutral-600">Clasificación por ronda</p>
+              {selected.rounds.map((round) => {
+                const roundStandings = computeStandings({
+                  players,
+                  pairs: selected.pairs.filter((pair) => pair.round_id === round.id),
+                  matches: selected.matches,
+                  matchPlayers: selected.matchPlayers,
+                  mode: 'todos',
+                  roundId: round.id,
+                })
+
+                return (
+                  <div key={round.id} className="space-y-2">
+                    <p className="font-semibold">Ronda {round.number}</p>
+                    {roundStandings.map((row, index) => (
+                      <div
+                        key={`${round.id}-${row.playerId}`}
+                        className="flex items-center justify-between rounded-xl bg-neutral-50 px-4 py-3"
+                      >
+                        <div className="flex items-center gap-3">
+                          <span className="w-6 text-sm font-bold text-neutral-500">{index + 1}</span>
+                          <div>
+                            <p className="font-semibold">{row.name}</p>
+                            <p className="text-xs text-neutral-500">PJ {row.played} · PG {row.wins}</p>
+                          </div>
+                        </div>
+                        <p className="text-lg font-bold text-brand">{row.points}</p>
+                      </div>
+                    ))}
+                  </div>
+                )
+              })}
+            </section>
+
             <section className="space-y-3">
-              <p className="text-sm font-semibold text-neutral-600">Jornadas</p>
+              <p className="text-sm font-semibold text-neutral-600">Rondas</p>
               {selected.rounds.map((round) => {
                 const pairById = new Map(selected.pairs.map((pair) => [pair.id, pair]))
+                const roundDays = selected.roundDays
+                  .filter((day) => day.round_id === round.id)
+                  .sort((a, b) => a.number - b.number)
                 return (
                   <div key={round.id} className="space-y-3">
-                    <p className="font-semibold">Jornada {round.number}</p>
-                    {selected.matches
-                      .filter((match) => match.round_id === round.id)
-                      .map((match) => (
-                        <MatchCard
-                          key={match.id}
-                          match={match}
-                          pairA={pairById.get(match.pair_a_id)!}
-                          pairB={pairById.get(match.pair_b_id)!}
-                          players={players}
-                          lineup={selected.matchPlayers.filter((slot) => slot.match_id === match.id)}
-                          ballDuty={selected.ballDuties.find((duty) => duty.match_id === match.id)}
-                          readOnly
-                          onChanged={() => undefined}
-                        />
-                      ))}
+                    <p className="font-semibold">Ronda {round.number}</p>
+                    {roundDays.map((day) => (
+                      <div key={day.id} className="space-y-3 rounded-2xl bg-neutral-50 p-3">
+                        <p className="font-medium text-neutral-700">Jornada {day.number}</p>
+                        {selected.matches
+                          .filter((match) => match.day_id === day.id)
+                          .map((match) => (
+                            <MatchCard
+                              key={match.id}
+                              match={match}
+                              pairA={pairById.get(match.pair_a_id)!}
+                              pairB={pairById.get(match.pair_b_id)!}
+                              players={players}
+                              lineup={selected.matchPlayers.filter((slot) => slot.match_id === match.id)}
+                              ballDuty={selected.ballDuties.find((duty) => duty.match_id === match.id)}
+                              readOnly
+                              onChanged={() => undefined}
+                            />
+                          ))}
+                      </div>
+                    ))}
                   </div>
                 )
               })}

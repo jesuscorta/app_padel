@@ -1,7 +1,7 @@
 import type { ComponentType } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
 import { useLeague } from '../lib/LeagueContext'
-import { IconBall, IconCalendar, IconHistory, IconSettings, IconTrophy } from './icons'
+import { IconCalendar, IconHistory, IconSettings, IconTrophy } from './icons'
 import { cx } from './ui'
 
 interface NavItemProps {
@@ -55,9 +55,8 @@ export default function Layout() {
         <div className="mx-auto flex max-w-md">
           <NavItem to="/" end icon={IconCalendar} label="Jornada" />
           <NavItem to="/clasificacion" icon={IconTrophy} label="Clasificación" />
-          <NavItem to="/pelotas" icon={IconBall} label="Pelotas" />
           <NavItem to="/historial" icon={IconHistory} label="Historial" />
-          <NavItem to="/ajustes" icon={IconSettings} label="Ajustes" />
+          <NavItem to="/ajustes" icon={IconSettings} label="Más" />
         </div>
       </nav>
     </div>

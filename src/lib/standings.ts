@@ -18,6 +18,7 @@ interface ComputeStandingsInput {
   matches: Match[]
   matchPlayers: MatchPlayer[]
   mode: StandingsMode
+  roundId?: string
 }
 
 /**
@@ -31,12 +32,18 @@ export function computeStandings({
   matches,
   matchPlayers,
   mode,
+  roundId,
 }: ComputeStandingsInput): StandingRow[] {
+  const relevantMatches = roundId ? matches.filter((match) => match.round_id === roundId) : matches
+  const relevantMatchIds = new Set(relevantMatches.map((match) => match.id))
+  const relevantMatchPlayers = roundId
+    ? matchPlayers.filter((slot) => relevantMatchIds.has(slot.match_id))
+    : matchPlayers
   const playerById = new Map(players.map((player) => [player.id, player]))
   const titularIds = [...new Set(pairs.flatMap((pair) => [pair.player1_id, pair.player2_id]))]
-  const substituteIdsWhoPlayed = [...new Set(matchPlayers.map((slot) => slot.actual_player_id))].filter(
-    (playerId) => playerById.get(playerId)?.role === 'sustituto',
-  )
+  const substituteIdsWhoPlayed = [
+    ...new Set(relevantMatchPlayers.map((slot) => slot.actual_player_id)),
+  ].filter((playerId) => playerById.get(playerId)?.role === 'sustituto')
 
   const relevantIds =
     mode === 'titulares' ? titularIds : [...new Set([...titularIds, ...substituteIdsWhoPlayed])]
@@ -56,9 +63,9 @@ export function computeStandings({
     })
   }
 
-  for (const match of matches) {
+  for (const match of relevantMatches) {
     if (!match.winner_pair_id) continue
-    const slots = matchPlayers.filter((slot) => slot.match_id === match.id)
+    const slots = relevantMatchPlayers.filter((slot) => slot.match_id === match.id)
     const playedIds = [...new Set(slots.map((slot) => slot.actual_player_id))]
     for (const playerId of playedIds) {
       const row = rows.get(playerId)

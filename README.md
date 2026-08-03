@@ -13,21 +13,37 @@ PWA mobile-first para gestionar una liga de pádel entre amigos.
 ## Requisitos funcionales implementados
 
 - 8 jugadores titulares
-- Sorteo aleatorio de 4 parejas con vista previa y repetición antes de confirmar
-- Parejas fijas durante toda la liga
-- Calendario automático round-robin: 3 jornadas, 2 partidos por jornada
-- Pantalla principal mostrando solo la jornada actual
+- Calendario de 7 rondas
+- En cada ronda se generan 4 parejas temporales sin repetir pareja en toda la liga
+- En cada ronda hay 3 jornadas de 2 partidos (6 partidos por ronda)
+- Pantalla principal mostrando la jornada activa dentro de la ronda activa
 - Registrar únicamente el ganador
 - Corregir resultados
-- Ausencias con sustitutos sin modificar las parejas
+- Ausencias con sustitutos sin modificar la pareja temporal de esa ronda
 - Clasificación individual:
-  - solo titulares
-  - incluyendo sustitutos
+- por ronda
+- global
 - Reparto automático y editable de pelotas por partido
-- Historial de jornadas
+- Historial de rondas y jornadas
+- Eliminación de ligas en curso o finalizadas
 - Cierre de liga y archivo histórico en solo lectura
 - PWA instalable en iOS y Android
 - PIN simple por dispositivo
+
+## Reglas del dominio
+
+- Siempre hay 8 titulares por liga
+- Una liga se compone de 7 rondas
+- Cada ronda se divide en 3 jornadas
+- Cada ronda genera 4 parejas temporales
+- Ninguna pareja puede repetirse dentro de la misma liga
+- Dentro de cada ronda, las 4 parejas juegan todos contra todos: 6 partidos
+- Cada jornada contiene 2 partidos
+- Solo se registra el ganador de cada partido
+- Los puntos individuales van al jugador que realmente jugó
+- Los sustitutos no alteran la pareja temporal de esa ronda
+- Las pelotas se asignan por partido
+- Solo puede existir una liga activa
 
 ## Desarrollo local
 

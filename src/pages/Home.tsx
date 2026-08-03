@@ -1,17 +1,20 @@
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useLeague } from '../lib/LeagueContext'
 import MatchCard from '../components/MatchCard'
-import { Button, Card, EmptyState, Spinner } from '../components/ui'
+import { Badge, Button, Card, EmptyState, Spinner, cx } from '../components/ui'
 
 export default function Home() {
   const { players, active, loading, refresh } = useLeague()
+  const [selectedRoundNumber, setSelectedRoundNumber] = useState<number | null>(null)
+  const [selectedDayNumber, setSelectedDayNumber] = useState<number | null>(null)
 
   if (loading) return <Spinner />
 
   if (!active) {
     return (
       <EmptyState title="No hay liga activa">
-        <p className="mb-4">Sortea las 4 parejas para empezar una nueva liga.</p>
+        <p className="mb-4">Sortea las 7 rondas para empezar una nueva liga.</p>
         <Link to="/sorteo">
           <Button>Ir al sorteo</Button>
         </Link>
@@ -20,13 +23,33 @@ export default function Home() {
   }
 
   const currentRound = active.rounds.find((r) => r.status === 'current')
+  const currentRoundDays = currentRound
+    ? active.roundDays.filter((day) => day.round_id === currentRound.id)
+    : []
+  const currentDay = currentRoundDays.find((day) => day.status === 'current')
+
+  useEffect(() => {
+    if (currentRound) setSelectedRoundNumber((prev) => prev ?? currentRound.number)
+  }, [currentRound])
+
+  useEffect(() => {
+    if (currentDay) setSelectedDayNumber((prev) => prev ?? currentDay.number)
+  }, [currentDay])
+
+  useEffect(() => {
+    if (!active || !currentRound || selectedRoundNumber === null) return
+    const selectedRound = active.rounds.find((round) => round.number === selectedRoundNumber)
+    if (selectedRound && selectedRound.status === 'finished' && selectedRound.number < currentRound.number) {
+      setSelectedRoundNumber(currentRound.number)
+    }
+  }, [active, currentRound, selectedRoundNumber])
 
   if (!currentRound) {
     return (
       <Card className="space-y-2 text-center">
         <p className="text-lg font-bold">¡Liga completada!</p>
         <p className="text-sm text-neutral-500">
-          Se han jugado las 3 jornadas. Consulta la clasificación o cierra la liga desde Ajustes.
+          Se han jugado las 7 rondas. Consulta la clasificación o cierra la liga desde Más.
         </p>
         <Link to="/clasificacion">
           <Button full className="mt-2">
@@ -37,15 +60,119 @@ export default function Home() {
     )
   }
 
-  const matches = active.matches.filter((m) => m.round_id === currentRound.id)
+  const viewedRound =
+    active.rounds.find((round) => round.number === selectedRoundNumber) ?? currentRound
+  const viewedRoundDays = active.roundDays
+    .filter((day) => day.round_id === viewedRound.id)
+    .sort((a, b) => a.number - b.number)
+  const viewedDay =
+    viewedRoundDays.find((day) => day.number === selectedDayNumber) ??
+    (viewedRound.id === currentRound.id ? currentDay : viewedRoundDays[0]) ??
+    viewedRoundDays[0]
+  const matches = viewedDay ? active.matches.filter((m) => m.day_id === viewedDay.id) : []
   const done = matches.filter((m) => m.winner_pair_id !== null).length
   const pairById = new Map(active.pairs.map((p) => [p.id, p]))
+  const currentRoundNumber = currentRound.number
+
+  useEffect(() => {
+    if (!viewedRoundDays.length) return
+    setSelectedDayNumber((prev) => {
+      if (prev && viewedRoundDays.some((day) => day.number === prev)) return prev
+      return viewedRound.id === currentRound.id ? (currentDay?.number ?? viewedRoundDays[0].number) : viewedRoundDays[0].number
+    })
+  }, [viewedRound.id, viewedRoundDays, currentRound.id, currentDay])
 
   return (
     <div className="space-y-4">
-      <div className="flex items-baseline justify-between">
-        <h2 className="text-lg font-bold">Jornada {currentRound.number} de 3</h2>
-        <span className="text-sm text-neutral-500">{done}/2 partidos</span>
+      <div className="space-y-3">
+        <div className="flex items-baseline justify-between">
+          <div className="flex items-center gap-2">
+            <h2 className="text-lg font-bold">Ronda {viewedRound.number} de 7</h2>
+            {viewedRound.number === currentRoundNumber && (
+              <Badge className="bg-brand/10 text-brand">Actual</Badge>
+            )}
+          </div>
+          <span className="text-sm text-neutral-500">{done}/2 partidos</span>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Button
+            variant="secondary"
+            disabled={viewedRound.number === 1}
+            onClick={() => setSelectedRoundNumber(viewedRound.number - 1)}
+          >
+            Anterior
+          </Button>
+          <div className="flex flex-1 gap-1 overflow-x-auto pb-1">
+            {active.rounds.map((round) => (
+              <button
+                key={round.id}
+                onClick={() => setSelectedRoundNumber(round.number)}
+                className={cx(
+                  'min-h-10 rounded-full px-3 text-sm font-semibold whitespace-nowrap transition',
+                  round.number === viewedRound.number
+                    ? 'bg-brand text-white'
+                    : 'bg-neutral-200 text-neutral-600 active:bg-neutral-300',
+                )}
+              >
+                R{round.number}
+              </button>
+            ))}
+          </div>
+          <Button
+            variant="secondary"
+            disabled={viewedRound.number === 7}
+            onClick={() => setSelectedRoundNumber(viewedRound.number + 1)}
+          >
+            Siguiente
+          </Button>
+        </div>
+
+        {viewedDay && (
+          <div className="space-y-2">
+            <div className="flex items-baseline justify-between">
+              <div className="flex items-center gap-2">
+                <h3 className="font-semibold">Jornada {viewedDay.number} de 3</h3>
+                {viewedRound.id === currentRound.id && viewedDay.number === currentDay?.number && (
+                  <Badge className="bg-brand/10 text-brand">Actual</Badge>
+                )}
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Button
+                variant="secondary"
+                disabled={viewedDay.number === 1}
+                onClick={() => setSelectedDayNumber(viewedDay.number - 1)}
+              >
+                Anterior
+              </Button>
+              <div className="flex flex-1 gap-1 overflow-x-auto pb-1">
+                {viewedRoundDays.map((day) => (
+                  <button
+                    key={day.id}
+                    onClick={() => setSelectedDayNumber(day.number)}
+                    className={cx(
+                      'min-h-10 rounded-full px-3 text-sm font-semibold whitespace-nowrap transition',
+                      day.number === viewedDay.number
+                        ? 'bg-brand text-white'
+                        : 'bg-neutral-200 text-neutral-600 active:bg-neutral-300',
+                    )}
+                  >
+                    J{day.number}
+                  </button>
+                ))}
+              </div>
+              <Button
+                variant="secondary"
+                disabled={viewedDay.number === 3}
+                onClick={() => setSelectedDayNumber(viewedDay.number + 1)}
+              >
+                Siguiente
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
 
       {matches.map((m) => (
@@ -62,7 +189,7 @@ export default function Home() {
       ))}
 
       <p className="text-center text-xs text-neutral-400">
-        Toca una pareja para registrarla como ganadora
+        Toca una pareja para registrar el ganador del partido
       </p>
     </div>
   )

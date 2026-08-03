@@ -1,11 +1,12 @@
 import { useState } from 'react'
 import { useLeague } from '../lib/LeagueContext'
 import { computeStandings, type StandingsMode } from '../lib/standings'
-import { Badge, Card, EmptyState, SegmentedControl, Spinner } from '../components/ui'
+import { Badge, Card, EmptyState, SegmentedControl, Spinner, cx } from '../components/ui'
 
 export default function Standings() {
   const { players, active, loading } = useLeague()
   const [mode, setMode] = useState<StandingsMode>('titulares')
+  const [scope, setScope] = useState<'global' | number>('global')
 
   if (loading) return <Spinner />
   if (!active) {
@@ -22,6 +23,7 @@ export default function Standings() {
     matches: active.matches,
     matchPlayers: active.matchPlayers,
     mode,
+    roundId: scope === 'global' ? undefined : active.rounds.find((round) => round.number === scope)?.id,
   })
 
   return (
@@ -36,6 +38,33 @@ export default function Standings() {
             { value: 'todos', label: 'Con sustitutos' },
           ]}
         />
+        <div className="flex gap-1 overflow-x-auto pb-1">
+          <button
+            onClick={() => setScope('global')}
+            className={cx(
+              'min-h-10 rounded-full px-3 text-sm font-semibold whitespace-nowrap transition',
+              scope === 'global'
+                ? 'bg-brand text-white'
+                : 'bg-neutral-200 text-neutral-600 active:bg-neutral-300',
+            )}
+          >
+            Global
+          </button>
+          {active.rounds.map((round) => (
+            <button
+              key={round.id}
+              onClick={() => setScope(round.number)}
+              className={cx(
+                'min-h-10 rounded-full px-3 text-sm font-semibold whitespace-nowrap transition',
+                scope === round.number
+                  ? 'bg-brand text-white'
+                  : 'bg-neutral-200 text-neutral-600 active:bg-neutral-300',
+              )}
+            >
+              Ronda {round.number}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="space-y-3">

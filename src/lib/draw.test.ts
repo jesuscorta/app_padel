@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { drawPairs, shuffle } from './draw'
+import { shuffle } from './draw'
 
 /** RNG determinista (mulberry32) para tests. */
 function seededRng(seed: number): () => number {
@@ -30,18 +30,5 @@ describe('shuffle', () => {
   it('es determinista con la misma semilla', () => {
     const input = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
     expect(shuffle(input, seededRng(7))).toEqual(shuffle(input, seededRng(7)))
-  })
-})
-
-describe('drawPairs', () => {
-  it('genera 4 parejas cubriendo a los 8 jugadores exactamente una vez', () => {
-    const players = ['p1', 'p2', 'p3', 'p4', 'p5', 'p6', 'p7', 'p8']
-    const pairs = drawPairs(players, seededRng(99))
-    expect(pairs).toHaveLength(4)
-    expect(pairs.flat().sort()).toEqual(players)
-  })
-
-  it('rechaza listas que no sean de 8', () => {
-    expect(() => drawPairs(['a', 'b', 'c'])).toThrow()
   })
 })

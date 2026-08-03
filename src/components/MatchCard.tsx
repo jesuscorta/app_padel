@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { playerName } from '../lib/LeagueContext'
-import { advanceRoundIfComplete, clearWinner, setWinner } from '../lib/db/matches'
+import { advanceScheduleIfComplete, clearWinner, setWinner } from '../lib/db/matches'
 import { createSubstitute, setActualPlayer } from '../lib/db/substitutions'
 import { pairLabel } from '../lib/format'
 import { Badge, Button, Card, ConfirmSheet, Sheet, cx } from './ui'
@@ -59,7 +59,7 @@ export default function MatchCard({
     setSaving(true)
     try {
       await setWinner(match.id, pair.id)
-      await advanceRoundIfComplete(match.round_id)
+      await advanceScheduleIfComplete(match.day_id, match.round_id)
       setPendingWinner(null)
       setCorrectOpen(false)
       await onChanged()
@@ -208,6 +208,9 @@ export default function MatchCard({
 
       <Sheet open={absenceOpen} onClose={() => setAbsenceOpen(false)} title="Gestionar ausencias">
         <div className="space-y-4">
+          <p className="text-sm text-neutral-500">
+            El sustituto juega este partido, pero la pareja temporal de la ronda no cambia.
+          </p>
           <div className="space-y-2">
             {[pairA, pairB].map((pair) => {
               const slots = pair.id === pairA.id ? slotsA : slotsB

@@ -14,11 +14,15 @@ PWA de gestión de liga de pádel entre amigos.
 ## Reglas del dominio
 
 - Siempre hay 8 titulares por liga
-- Las parejas se sortean una vez y quedan fijas hasta cerrar la liga
-- La liga son 3 jornadas de todos contra todos entre 4 parejas
+- La liga se compone de 7 rondas
+- Cada ronda se divide en 3 jornadas
+- En cada ronda se generan 4 parejas temporales
+- Ninguna pareja puede repetirse dentro de la misma liga
+- En cada ronda, las 4 parejas juegan todos contra todos: 6 partidos
+- Cada jornada tiene 2 partidos
 - Solo se registra el ganador de cada partido
 - Los puntos individuales van al jugador que realmente jugó
-- Los sustitutos no alteran la pareja oficial
+- Los sustitutos no alteran la pareja temporal de la ronda
 - Las pelotas se asignan por partido
 - Solo puede existir una liga activa
 
