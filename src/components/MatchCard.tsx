@@ -134,15 +134,16 @@ export default function MatchCard({
         </button>
 
         {!readOnly && (
-          <Button
-            variant="secondary"
-            full
-            className="mt-3 min-h-9 px-3 py-2 text-sm"
-            disabled={saving}
-            onClick={() => openAbsence(pair)}
-          >
-            Ausencia
-          </Button>
+          <div className="mt-3 flex justify-center">
+            <Button
+              variant="ghost"
+              className="min-h-8 px-2 py-1 text-xs"
+              disabled={saving}
+              onClick={() => openAbsence(pair)}
+            >
+              Ausencia
+            </Button>
+          </div>
         )}
       </div>
     )
@@ -212,9 +213,6 @@ export default function MatchCard({
         title={selectedPair ? `Ausencia en ${pairLabel(players, selectedPair)}` : 'Gestionar ausencia'}
       >
         <div className="space-y-4">
-          <p className="text-sm text-neutral-500">
-            El sustituto juega este partido, pero la pareja temporal de la ronda no cambia.
-          </p>
           {selectedPair && !selectedSlot && (
             <div className="space-y-2">
               <p className="text-sm font-semibold text-neutral-600">¿Quién falta?</p>
@@ -225,9 +223,19 @@ export default function MatchCard({
                     setSelectedSlotId(slot.id)
                     setLineupError(null)
                   }}
-                  className="w-full rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-left font-semibold transition active:bg-neutral-100"
+                  className={cx(
+                    'w-full rounded-xl border px-4 py-3 text-left transition active:bg-neutral-100',
+                    slot.actual_player_id !== slot.titular_id
+                      ? 'border-brand bg-brand/5'
+                      : 'border-neutral-200 bg-neutral-50',
+                  )}
                 >
-                  {playerName(players, slot.titular_id)}
+                  <p className="font-semibold">{playerName(players, slot.titular_id)}</p>
+                  {slot.actual_player_id !== slot.titular_id && (
+                    <p className="mt-1 text-xs text-brand">
+                      Ahora: {playerName(players, slot.actual_player_id)}
+                    </p>
+                  )}
                 </button>
               ))}
             </div>
@@ -282,7 +290,6 @@ export default function MatchCard({
                     )}
                   >
                     {substitute.name}
-                    <span className="text-xs opacity-70">Sustituto</span>
                   </button>
                 ))}
               </div>
