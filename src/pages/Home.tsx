@@ -189,7 +189,7 @@ export default function Home() {
         </div>
 
         {safeViewedDay && (
-          <div className="rounded-2xl border border-neutral-200 bg-neutral-50 p-3 space-y-2">
+          <div className="mx-auto w-full max-w-sm space-y-2 rounded-2xl border border-neutral-200 bg-neutral-50 p-3">
             <div className="flex items-baseline justify-between">
               <div className="flex items-center gap-2">
                 <p className="text-xs font-semibold uppercase tracking-wide text-neutral-400">Jornadas</p>
@@ -200,7 +200,7 @@ export default function Home() {
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center justify-center gap-2">
               <button
                 className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-neutral-700 ring-1 ring-neutral-200 disabled:opacity-30"
                 disabled={safeViewedDay.number === 1}
@@ -209,7 +209,7 @@ export default function Home() {
               >
                 <IconChevronLeft className="h-4 w-4" />
               </button>
-              <div className="flex flex-1 gap-1 overflow-x-auto pb-1">
+              <div className="flex max-w-[220px] flex-1 gap-1 overflow-x-auto px-1 py-1">
                 {viewedRoundDays.map((day) => (
                   <button
                     key={day.id}
