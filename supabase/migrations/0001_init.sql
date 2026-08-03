@@ -58,9 +58,9 @@ create table matches (
   round_id uuid not null references rounds (id) on delete cascade,
   day_id uuid not null references round_days (id) on delete cascade,
   position int not null check (position between 1 and 2),
-  pair_a_id uuid not null references pairs (id),
-  pair_b_id uuid not null references pairs (id),
-  winner_pair_id uuid references pairs (id),
+  pair_a_id uuid not null references pairs (id) on delete cascade,
+  pair_b_id uuid not null references pairs (id) on delete cascade,
+  winner_pair_id uuid references pairs (id) on delete set null,
   created_at timestamptz not null default now(),
   unique (day_id, position)
 );
@@ -70,7 +70,7 @@ create table matches (
 create table match_players (
   id uuid primary key default gen_random_uuid(),
   match_id uuid not null references matches (id) on delete cascade,
-  pair_id uuid not null references pairs (id),
+  pair_id uuid not null references pairs (id) on delete cascade,
   titular_id uuid not null references players (id),
   actual_player_id uuid not null references players (id),
   unique (match_id, pair_id, titular_id)

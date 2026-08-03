@@ -24,6 +24,7 @@ export default function Leagues() {
   const [detailLoading, setDetailLoading] = useState(false)
   const [finishOpen, setFinishOpen] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string; active: boolean } | null>(null)
+  const [actionError, setActionError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
 
   const activeComplete = Boolean(active && active.rounds.every((round) => round.status === 'finished'))
@@ -54,11 +55,14 @@ export default function Leagues() {
   async function onFinishLeague() {
     if (!active) return
     setSaving(true)
+    setActionError(null)
     try {
       await finishLeague(active.league.id)
       setFinishOpen(false)
       await refresh()
       await loadArchive()
+    } catch (error) {
+      setActionError(error instanceof Error ? error.message : 'No se pudo finalizar la liga')
     } finally {
       setSaving(false)
     }
@@ -67,6 +71,7 @@ export default function Leagues() {
   async function onDeleteLeague() {
     if (!deleteTarget) return
     setSaving(true)
+    setActionError(null)
     try {
       await deleteLeague(deleteTarget.id)
       if (deleteTarget.active) await refresh()
@@ -76,6 +81,14 @@ export default function Leagues() {
         setSelected(null)
         setSelectedTitle(null)
       }
+    } catch (error) {
+      const message =
+        error && typeof error === 'object' && 'code' in error && error.code === '23503'
+          ? 'La liga no se puede borrar porque la base de datos todavía tiene relaciones antiguas sin borrado en cascada. Actualiza las constraints de Supabase y vuelve a intentarlo.'
+          : error instanceof Error
+            ? error.message
+            : 'No se pudo eliminar la liga'
+      setActionError(message)
     } finally {
       setSaving(false)
     }
@@ -96,6 +109,12 @@ export default function Leagues() {
 
   return (
     <div className="space-y-5">
+      {actionError && (
+        <Card className="border border-red-200 bg-red-50 text-red-900">
+          <p className="text-sm font-medium">{actionError}</p>
+        </Card>
+      )}
+
       <section className="space-y-3">
         <h2 className="text-lg font-bold">Liga actual</h2>
 
@@ -122,9 +141,10 @@ export default function Leagues() {
                   full
                   variant="danger"
                   disabled={saving}
-                  onClick={() =>
+                  onClick={() => {
+                    setActionError(null)
                     setDeleteTarget({ id: active.league.id, name: active.league.name, active: true })
-                  }
+                  }}
                 >
                   Eliminar liga actual
                 </Button>
@@ -140,9 +160,10 @@ export default function Leagues() {
                   full
                   variant="danger"
                   disabled={saving}
-                  onClick={() =>
+                  onClick={() => {
+                    setActionError(null)
                     setDeleteTarget({ id: active.league.id, name: active.league.name, active: true })
-                  }
+                  }}
                 >
                   Eliminar liga actual
                 </Button>
@@ -183,7 +204,10 @@ export default function Leagues() {
                 </Button>
                 <Button
                   variant="danger"
-                  onClick={() => setDeleteTarget({ id: league.id, name: league.name, active: false })}
+                  onClick={() => {
+                    setActionError(null)
+                    setDeleteTarget({ id: league.id, name: league.name, active: false })
+                  }}
                 >
                   Eliminar
                 </Button>
