@@ -14,6 +14,10 @@ export default function Draw() {
   const navigate = useNavigate()
   const titulares = players.filter((p) => p.role === 'titular' && p.active)
   const ready = !loading && !active && titulares.length === 8
+  const titularesKey = titulares
+    .map((player) => player.id)
+    .sort()
+    .join(',')
 
   const [order, setOrder] = useState<Player[] | null>(null)
   const [name, setName] = useState(`Liga ${new Date().getFullYear()}`)
@@ -23,11 +27,26 @@ export default function Draw() {
   const playerById = new Map(titulares.map((player) => [player.id, player]))
   const rounds = order ? generateRoundPairings(order.map((player) => player.id)) : []
 
-  // Sorteo inicial automático en cuanto hay 8 titulares
+  function randomizeOrder() {
+    setOrder(shuffle(titulares))
+  }
+
+  // Genera el primer sorteo en cuanto hay 8 titulares y reinicia si cambia la base.
   useEffect(() => {
-    if (ready) setOrder((prev) => prev ?? shuffle(titulares))
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ready])
+    if (!ready) {
+      setOrder(null)
+      return
+    }
+
+    setOrder((current) => {
+      if (!current) return shuffle(titulares)
+      const currentKey = current
+        .map((player) => player.id)
+        .sort()
+        .join(',')
+      return currentKey === titularesKey ? current : shuffle(titulares)
+    })
+  }, [ready, titulares, titularesKey])
 
   if (loading) return <Spinner />
   if (!isAdmin) return <Card className="text-center">Solo el admin puede crear ligas.</Card>
@@ -118,7 +137,7 @@ export default function Draw() {
       {error && <p className="text-sm font-medium text-red-600">{error}</p>}
 
       <div className="flex gap-3">
-        <Button variant="secondary" full disabled={saving} onClick={() => setOrder(shuffle(titulares))}>
+        <Button variant="secondary" full disabled={saving} onClick={randomizeOrder}>
           Repetir sorteo
         </Button>
         <Button full disabled={saving || !name.trim() || !order} onClick={() => setConfirmOpen(true)}>
