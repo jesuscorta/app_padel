@@ -1,10 +1,10 @@
 import type { IncomingMessage, ServerResponse } from 'node:http'
-import { assignBallDuties } from '../balls'
-import { generateRoundMatches, generateRoundPairings } from '../schedule'
-import { readJson, json, methodNotAllowed } from './http'
-import { adminClient } from './supabase-admin'
-import { clearSessionCookie, createSessionCookie, getRoleFromCookie, type SessionRole } from './session'
-import { computeMatchScore, type MatchScoreInput } from '../scoring'
+import { assignBallDuties } from '../balls.ts'
+import { generateRoundMatches, generateRoundPairings } from '../schedule.ts'
+import { readJson, json, methodNotAllowed } from './http.ts'
+import { adminClient } from './supabase-admin.ts'
+import { clearSessionCookie, createSessionCookie, getRoleFromCookie, type SessionRole } from './session.ts'
+import { computeMatchScore, type MatchScoreInput } from '../scoring.ts'
 
 function unwrap<T>(res: { data: T; error: { message: string } | null }): T {
   if (res.error) throw new Error(res.error.message)

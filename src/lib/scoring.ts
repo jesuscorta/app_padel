@@ -1,4 +1,4 @@
-import type { Match } from '../types'
+import type { Match } from '../types.ts'
 
 export interface MatchScoreInput {
   set1A: number | null
