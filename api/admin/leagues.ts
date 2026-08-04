@@ -1,3 +1,3 @@
-import { handleAdminLeagues } from '../_lib/api-handlers.ts'
+import { handleAdminLeagues } from '../_lib/api-handlers.js'
 
 export default handleAdminLeagues

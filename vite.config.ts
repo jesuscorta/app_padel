@@ -11,7 +11,7 @@ import {
   handleAdminSubstitutions,
   handleLogout,
   handleSession,
-} from './api/_lib/api-handlers.ts'
+} from './api/_lib/api-handlers.js'
 
 export default defineConfig(({ mode }) => {
   Object.assign(process.env, loadEnv(mode, process.cwd(), ''))

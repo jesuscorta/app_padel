@@ -1,3 +1,3 @@
-import { handleAdminBalls } from '../_lib/api-handlers.ts'
+import { handleAdminBalls } from '../_lib/api-handlers.js'
 
 export default handleAdminBalls
