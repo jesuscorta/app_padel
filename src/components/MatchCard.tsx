@@ -284,7 +284,7 @@ export default function MatchCard({
                         [aKey]: event.target.value,
                       }))
                     }
-                    className="min-h-11 rounded-xl border border-neutral-300 px-3 text-center outline-none focus:border-brand focus:ring-2 focus:ring-brand/30"
+                    className="min-h-11 w-full min-w-0 rounded-xl border border-neutral-300 px-2 text-center outline-none focus:border-brand focus:ring-2 focus:ring-brand/30"
                   />
                   <span className="text-sm font-bold text-neutral-400">-</span>
                   <input
@@ -297,7 +297,7 @@ export default function MatchCard({
                         [bKey]: event.target.value,
                       }))
                     }
-                    className="min-h-11 rounded-xl border border-neutral-300 px-3 text-center outline-none focus:border-brand focus:ring-2 focus:ring-brand/30"
+                    className="min-h-11 w-full min-w-0 rounded-xl border border-neutral-300 px-2 text-center outline-none focus:border-brand focus:ring-2 focus:ring-brand/30"
                   />
                 </div>
 
@@ -313,7 +313,7 @@ export default function MatchCard({
                           [tbAKey]: event.target.value,
                         }))
                       }
-                      className="min-h-10 rounded-xl border border-neutral-300 px-3 text-center outline-none focus:border-brand focus:ring-2 focus:ring-brand/30"
+                      className="min-h-10 w-full min-w-0 rounded-xl border border-neutral-300 px-2 text-center outline-none focus:border-brand focus:ring-2 focus:ring-brand/30"
                     />
                     <span className="text-xs font-bold text-neutral-400">TB</span>
                     <input
@@ -326,7 +326,7 @@ export default function MatchCard({
                           [tbBKey]: event.target.value,
                         }))
                       }
-                      className="min-h-10 rounded-xl border border-neutral-300 px-3 text-center outline-none focus:border-brand focus:ring-2 focus:ring-brand/30"
+                      className="min-h-10 w-full min-w-0 rounded-xl border border-neutral-300 px-2 text-center outline-none focus:border-brand focus:ring-2 focus:ring-brand/30"
                     />
                   </div>
                 )}
