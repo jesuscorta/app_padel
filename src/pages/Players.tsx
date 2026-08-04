@@ -1,12 +1,14 @@
 import { useMemo, useState, type FormEvent } from 'react'
+import { useAuth } from '../lib/AuthContext'
 import { useLeague } from '../lib/LeagueContext'
 import { createPlayer, updatePlayer } from '../lib/db/players'
-import { Badge, BusyOverlay, Button, Card, Sheet, Spinner, cx } from '../components/ui'
+import { Badge, BusyOverlay, Button, Card, EmptyState, Sheet, Spinner, cx } from '../components/ui'
 import type { Player, PlayerRole } from '../types'
 
 const TITULARES_NECESARIOS = 8
 
 export default function Players() {
+  const { isAdmin } = useAuth()
   const { players, active, loading, refresh } = useLeague()
   const [newTitular, setNewTitular] = useState('')
   const [newSustituto, setNewSustituto] = useState('')
@@ -54,6 +56,7 @@ export default function Players() {
   }
 
   if (loading) return <Spinner />
+  if (!isAdmin) return <EmptyState title="Sin acceso">Solo el admin puede gestionar jugadores.</EmptyState>
 
   function renderAddForm(
     role: PlayerRole,

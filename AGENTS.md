@@ -30,6 +30,12 @@ PWA de gestión de liga de pádel entre amigos.
 - Las pelotas se asignan por partido
 - Solo puede existir una liga activa
 
+## Acceso
+
+- `participant`: solo lectura
+- `admin`: lectura + escritura
+- La sesión se resuelve por código/PIN y cookie firmada
+
 ## Convenciones útiles
 
 - `src/lib/db/*` contiene acceso a Supabase

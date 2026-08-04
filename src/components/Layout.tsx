@@ -1,5 +1,6 @@
 import type { ComponentType } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
+import { useAuth } from '../lib/AuthContext'
 import { useLeague } from '../lib/LeagueContext'
 import { IconCalendar, IconHistory, IconSettings, IconTrophy } from './icons'
 import { cx } from './ui'
@@ -30,17 +31,24 @@ function NavItem({ to, icon: Icon, label, end }: NavItemProps) {
 }
 
 export default function Layout() {
+  const { isAdmin, role, logout } = useAuth()
   const { active, error, stale } = useLeague()
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col">
       <header className="pt-safe sticky top-0 z-40 bg-brand text-white">
         <div className="flex items-center justify-between px-4 py-3">
           <span className="text-lg font-bold">Liga de Pádel</span>
-          {active && (
-            <span className="rounded-full bg-white/15 px-2.5 py-0.5 text-xs font-medium">
-              {active.league.name}
-            </span>
-          )}
+          <div className="flex items-center gap-2">
+            {role && <span className="rounded-full bg-white/15 px-2.5 py-0.5 text-xs font-medium">{role === 'admin' ? 'Admin' : 'Participante'}</span>}
+            {active && (
+              <span className="rounded-full bg-white/15 px-2.5 py-0.5 text-xs font-medium">
+                {active.league.name}
+              </span>
+            )}
+            <button className="text-xs font-semibold text-white/80" onClick={() => void logout()}>
+              Salir
+            </button>
+          </div>
         </div>
         {error && (
           <div className={cx('px-4 py-2 text-xs font-medium', stale ? 'bg-amber-100 text-amber-900' : 'bg-red-100 text-red-900')}>
@@ -56,7 +64,7 @@ export default function Layout() {
           <NavItem to="/" end icon={IconCalendar} label="Jornada" />
           <NavItem to="/clasificacion" icon={IconTrophy} label="Clasificación" />
           <NavItem to="/historial" icon={IconHistory} label="Historial" />
-          <NavItem to="/ajustes" icon={IconSettings} label="Más" />
+          {isAdmin && <NavItem to="/ajustes" icon={IconSettings} label="Más" />}
         </div>
       </nav>
     </div>

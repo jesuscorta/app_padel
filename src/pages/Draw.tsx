@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { useAuth } from '../lib/AuthContext'
 import { useLeague } from '../lib/LeagueContext'
 import { createLeague } from '../lib/db/leagues'
 import { shuffle } from '../lib/draw'
@@ -8,6 +9,7 @@ import { BusyOverlay, Button, Card, ConfirmSheet, Spinner } from '../components/
 import type { Player } from '../types'
 
 export default function Draw() {
+  const { isAdmin } = useAuth()
   const { players, active, loading, refresh } = useLeague()
   const navigate = useNavigate()
   const titulares = players.filter((p) => p.role === 'titular' && p.active)
@@ -28,6 +30,7 @@ export default function Draw() {
   }, [ready])
 
   if (loading) return <Spinner />
+  if (!isAdmin) return <Card className="text-center">Solo el admin puede crear ligas.</Card>
 
   if (active) {
     return (

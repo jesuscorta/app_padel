@@ -1,7 +1,11 @@
 import { Link } from 'react-router-dom'
+import { useAuth } from '../lib/AuthContext'
 import { Card } from '../components/ui'
+import { EmptyState } from '../components/ui'
 
 export default function Settings() {
+  const { isAdmin } = useAuth()
+  if (!isAdmin) return <EmptyState title="Sin acceso">Esta zona es solo para administración.</EmptyState>
   return (
     <div className="space-y-3">
       <h2 className="text-lg font-bold">Más</h2>

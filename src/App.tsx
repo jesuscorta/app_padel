@@ -1,5 +1,6 @@
 import { createBrowserRouter, RouterProvider } from 'react-router-dom'
 import { supabaseConfigured } from './lib/supabase'
+import { AuthProvider } from './lib/AuthContext'
 import { LeagueProvider } from './lib/LeagueContext'
 import PinGate from './components/PinGate'
 import Layout from './components/Layout'
@@ -15,11 +16,13 @@ import Leagues from './pages/Leagues'
 const router = createBrowserRouter([
   {
     element: (
-      <PinGate>
-        <LeagueProvider>
-          <Layout />
-        </LeagueProvider>
-      </PinGate>
+      <AuthProvider>
+        <PinGate>
+          <LeagueProvider>
+            <Layout />
+          </LeagueProvider>
+        </PinGate>
+      </AuthProvider>
     ),
     children: [
       { path: '/', element: <Home /> },
@@ -53,6 +56,9 @@ function SetupScreen() {
           </li>
           <li>
             Copia <code>.env.example</code> a <code>.env</code> con tu URL y tu anon key
+          </li>
+          <li>
+            Configura también <code>PARTICIPANT_CODE</code>, <code>ADMIN_PIN</code>, <code>SESSION_SECRET</code> y <code>SUPABASE_SERVICE_ROLE_KEY</code>
           </li>
           <li>
             Reinicia <code>npm run dev</code>

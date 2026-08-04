@@ -70,8 +70,18 @@ npm run dev
 ```bash
 VITE_SUPABASE_URL=https://tu-proyecto.supabase.co
 VITE_SUPABASE_ANON_KEY=tu-clave-anon-publica
-VITE_ADMIN_PIN=1234
+PARTICIPANT_CODE=1234
+ADMIN_PIN=9999
+SESSION_SECRET=una-clave-larga-y-segura
+SUPABASE_SERVICE_ROLE_KEY=tu-service-role-key
 ```
+
+## Acceso por roles
+
+- `Participante`: entra con un código de 4 dígitos y solo puede ver
+- `Admin`: entra con PIN y puede gestionar toda la liga
+- Las lecturas se hacen desde cliente
+- Las escrituras sensibles pasan por la capa `/api/*` con sesión por cookie
 
 ## Scripts
 

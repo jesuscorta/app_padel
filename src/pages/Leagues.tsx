@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import HistoryMatchRow from '../components/HistoryMatchRow'
+import { useAuth } from '../lib/AuthContext'
 import { useLeague } from '../lib/LeagueContext'
 import { deleteLeague, finishLeague, getLeagueData, listFinishedLeagues } from '../lib/db/leagues'
 import { computeStandings } from '../lib/standings'
@@ -17,6 +18,7 @@ import {
 import type { League, LeagueData } from '../types'
 
 export default function Leagues() {
+  const { isAdmin } = useAuth()
   const { players, active, loading, refresh } = useLeague()
   const [archive, setArchive] = useState<League[]>([])
   const [archiveLoading, setArchiveLoading] = useState(true)
@@ -107,6 +109,7 @@ export default function Leagues() {
   }, [players, selected])
 
   if (loading) return <Spinner />
+  if (!isAdmin) return <EmptyState title="Sin acceso">Solo el admin puede gestionar ligas.</EmptyState>
 
   return (
     <div className="space-y-5">

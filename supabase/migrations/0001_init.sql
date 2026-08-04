@@ -95,3 +95,24 @@ create table ball_duties (
   match_id uuid not null references matches (id) on delete cascade unique,
   player_id uuid not null references players (id)
 );
+
+alter table players enable row level security;
+alter table leagues enable row level security;
+alter table rounds enable row level security;
+alter table round_days enable row level security;
+alter table pairs enable row level security;
+alter table matches enable row level security;
+alter table match_players enable row level security;
+alter table ball_duties enable row level security;
+
+grant usage on schema public to anon;
+grant select on all tables in schema public to anon;
+
+create policy players_read on players for select to anon using (true);
+create policy leagues_read on leagues for select to anon using (true);
+create policy rounds_read on rounds for select to anon using (true);
+create policy round_days_read on round_days for select to anon using (true);
+create policy pairs_read on pairs for select to anon using (true);
+create policy matches_read on matches for select to anon using (true);
+create policy match_players_read on match_players for select to anon using (true);
+create policy ball_duties_read on ball_duties for select to anon using (true);

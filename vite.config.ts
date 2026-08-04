@@ -1,13 +1,47 @@
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
+import {
+  handleAccess,
+  handleAdminBalls,
+  handleAdminLeagues,
+  handleAdminMatches,
+  handleAdminPlayers,
+  handleAdminSubstitutions,
+  handleLogout,
+  handleSession,
+} from './src/lib/server/api-handlers'
 
-export default defineConfig({
-  plugins: [
-    react(),
-    tailwindcss(),
-    VitePWA({
+export default defineConfig(({ mode }) => {
+  Object.assign(process.env, loadEnv(mode, process.cwd(), ''))
+
+  return {
+    plugins: [
+      react(),
+      tailwindcss(),
+      {
+        name: 'local-api-routes',
+        configureServer(server) {
+          const routes = new Map([
+            ['/api/access', handleAccess],
+            ['/api/session', handleSession],
+            ['/api/logout', handleLogout],
+            ['/api/admin/players', handleAdminPlayers],
+            ['/api/admin/leagues', handleAdminLeagues],
+            ['/api/admin/matches', handleAdminMatches],
+            ['/api/admin/substitutions', handleAdminSubstitutions],
+            ['/api/admin/balls', handleAdminBalls],
+          ])
+          server.middlewares.use((req, res, next) => {
+            const pathname = req.url?.split('?')[0] ?? ''
+            const handler = routes.get(pathname)
+            if (!handler) return next()
+            void handler(req, res)
+          })
+        },
+      },
+      VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['icons/apple-touch-icon.png'],
       manifest: {
@@ -41,6 +75,7 @@ export default defineConfig({
           },
         ],
       },
-    }),
-  ],
+      }),
+    ],
+  }
 })

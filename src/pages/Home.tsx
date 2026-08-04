@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import ShareDayCard from '../components/ShareDayCard'
+import { useAuth } from '../lib/AuthContext'
 import { useLeague } from '../lib/LeagueContext'
 import MatchCard from '../components/MatchCard'
 import { Badge, BusyOverlay, Button, Card, EmptyState, Spinner, cx } from '../components/ui'
@@ -10,6 +11,7 @@ import { computeMatchScoreFromMatch } from '../lib/scoring'
 import { shareNodeAsImage } from '../lib/share'
 
 export default function Home() {
+  const { isAdmin } = useAuth()
   const { players, active, loading, refresh } = useLeague()
   const [selectedRoundNumber, setSelectedRoundNumber] = useState<number | null>(null)
   const [selectedDayNumber, setSelectedDayNumber] = useState<number | null>(null)
@@ -100,9 +102,7 @@ export default function Home() {
   const done = matches.filter((m) => m.winner_pair_id !== null).length
   const pairById = new Map(active?.pairs.map((p) => [p.id, p]) ?? [])
   const currentRoundNumber = currentRound?.number ?? 0
-  const isViewingCurrent = Boolean(
-    currentRound && currentDay && safeViewedRound?.id === currentRound.id && safeViewedDay?.id === currentDay.id,
-  )
+  const isViewingCurrent = Boolean(currentRound && currentDay && safeViewedRound?.id === currentRound.id && safeViewedDay?.id === currentDay.id)
   const currentDayMatches = currentDay && active ? active.matches.filter((m) => m.day_id === currentDay.id) : []
   const shareMatches = useMemo(
     () =>
@@ -327,12 +327,12 @@ export default function Home() {
           players={players}
           lineup={active.matchPlayers.filter((mp) => mp.match_id === m.id)}
           ballDuty={active.ballDuties.find((d) => d.match_id === m.id)}
-          readOnly={!isViewingCurrent}
+          readOnly={!isAdmin || !isViewingCurrent}
           onChanged={refresh}
         />
       ))}
 
-      {isViewingCurrent ? (
+      {isAdmin && isViewingCurrent ? (
         <p className="text-center text-xs text-neutral-400">Toca una pareja para registrar el ganador del partido</p>
       ) : (
         <p className="text-center text-xs font-medium text-neutral-400">Estás viendo una jornada en solo lectura</p>

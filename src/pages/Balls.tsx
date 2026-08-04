@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { useAuth } from '../lib/AuthContext'
 import { useLeague, playerName } from '../lib/LeagueContext'
 import { updateBallDuty } from '../lib/db/balls'
 import { pairLabel } from '../lib/format'
@@ -7,6 +8,7 @@ import { IconBall } from '../components/icons'
 import type { Match } from '../types'
 
 export default function Balls() {
+  const { isAdmin } = useAuth()
   const { players, active, loading, refresh } = useLeague()
   const [editing, setEditing] = useState<Match | null>(null)
   const [saving, setSaving] = useState(false)
@@ -24,6 +26,7 @@ export default function Balls() {
   }, [active])
 
   if (loading) return <Spinner />
+  if (!isAdmin) return <EmptyState title="Sin acceso">Solo el admin puede gestionar pelotas.</EmptyState>
   if (!active) return <EmptyState title="Sin liga activa">Crea una liga desde el sorteo.</EmptyState>
 
   const activePlayers = players.filter((p) => p.active)
