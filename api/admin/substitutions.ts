@@ -1,3 +1,3 @@
-import { handleAdminSubstitutions } from '../../src/lib/server/api-handlers.ts'
+import { handleAdminSubstitutions } from '../_lib/api-handlers.ts'
 
 export default handleAdminSubstitutions

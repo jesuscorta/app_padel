@@ -1,3 +1,3 @@
-import { handleAdminPlayers } from '../../src/lib/server/api-handlers.ts'
+import { handleAdminPlayers } from '../_lib/api-handlers.ts'
 
 export default handleAdminPlayers

@@ -1,3 +1,3 @@
-import { handleLogout } from '../src/lib/server/api-handlers.ts'
+import { handleLogout } from './_lib/api-handlers.ts'
 
 export default handleLogout

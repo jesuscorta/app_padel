@@ -1,3 +1,3 @@
-import { handleAdminMatches } from '../../src/lib/server/api-handlers.ts'
+import { handleAdminMatches } from '../_lib/api-handlers.ts'
 
 export default handleAdminMatches

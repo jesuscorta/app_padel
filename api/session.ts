@@ -1,3 +1,3 @@
-import { handleSession } from '../src/lib/server/api-handlers.ts'
+import { handleSession } from './_lib/api-handlers.ts'
 
 export default handleSession

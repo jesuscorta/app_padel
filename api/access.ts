@@ -1,3 +1,3 @@
-import { handleAccess } from '../src/lib/server/api-handlers.ts'
+import { handleAccess } from './_lib/api-handlers.ts'
 
 export default handleAccess
