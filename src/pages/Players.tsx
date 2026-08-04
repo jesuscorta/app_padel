@@ -1,8 +1,9 @@
 import { useMemo, useState, type FormEvent } from 'react'
+import { Link } from 'react-router-dom'
 import { useAuth } from '../lib/AuthContext'
 import { useLeague } from '../lib/LeagueContext'
 import { createPlayer, updatePlayer } from '../lib/db/players'
-import { Badge, BusyOverlay, Button, Card, EmptyState, Sheet, Spinner, cx } from '../components/ui'
+import { Badge, BusyOverlay, Button, Card, EmptyState, Notice, Sheet, Spinner, cx } from '../components/ui'
 import type { Player, PlayerRole } from '../types'
 
 const TITULARES_NECESARIOS = 8
@@ -15,6 +16,7 @@ export default function Players() {
   const [editing, setEditing] = useState<Player | null>(null)
   const [editName, setEditName] = useState('')
   const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const titulares = useMemo(() => players.filter((p) => p.role === 'titular'), [players])
   const sustitutos = useMemo(() => players.filter((p) => p.role === 'sustituto'), [players])
@@ -28,28 +30,39 @@ export default function Players() {
   async function onAdd(role: PlayerRole, name: string, clear: () => void) {
     if (!name.trim() || saving) return
     setSaving(true)
+    setError(null)
     try {
       await createPlayer(name, role)
       clear()
       await refresh()
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'No se pudo guardar el jugador')
     } finally {
       setSaving(false)
     }
   }
 
   async function onToggleActive(player: Player) {
-    await updatePlayer(player.id, { active: !player.active })
-    await refresh()
+    try {
+      setError(null)
+      await updatePlayer(player.id, { active: !player.active })
+      await refresh()
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'No se pudo actualizar el jugador')
+    }
   }
 
   async function onRename(e: FormEvent) {
     e.preventDefault()
     if (!editing || !editName.trim()) return
     setSaving(true)
+    setError(null)
     try {
       await updatePlayer(editing.id, { name: editName.trim() })
       setEditing(null)
       await refresh()
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'No se pudo renombrar el jugador')
     } finally {
       setSaving(false)
     }
@@ -77,6 +90,7 @@ export default function Players() {
           value={value}
           onChange={(e) => setValue(e.target.value)}
           placeholder={placeholder}
+          aria-label={placeholder.replace('…', '')}
           className="min-h-11 flex-1 rounded-xl border border-neutral-300 px-3 outline-none focus:border-brand focus:ring-2 focus:ring-brand/30"
         />
         <Button type="submit" variant="secondary" disabled={disabled || saving || !value.trim()}>
@@ -138,8 +152,10 @@ export default function Players() {
   return (
     <div className="space-y-6">
       <BusyOverlay open={saving} label="Guardando jugador…" />
+      <Link to="/ajustes" className="inline-flex min-h-11 items-center text-sm font-semibold text-brand">← Volver a Más</Link>
+      {error && <Notice tone="error">{error}</Notice>}
       <section className="space-y-3">
-        <h2 className="text-lg font-bold">Titulares</h2>
+        <h1 className="text-lg font-bold">Titulares</h1>
         {renderList(titulares, { actives: titularesActivos.length, needed: TITULARES_NECESARIOS })}
         {titularesActivos.length < TITULARES_NECESARIOS &&
           renderAddForm('titular', newTitular, setNewTitular, 'Nuevo titular…', false)}
@@ -166,6 +182,7 @@ export default function Players() {
             value={editName}
             onChange={(e) => setEditName(e.target.value)}
             autoFocus
+            aria-label="Nombre del jugador"
             className="min-h-11 w-full rounded-xl border border-neutral-300 px-3 outline-none focus:border-brand focus:ring-2 focus:ring-brand/30"
           />
           <Button type="submit" full disabled={saving || !editName.trim()}>

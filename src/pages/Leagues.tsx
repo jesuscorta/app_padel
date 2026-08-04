@@ -29,6 +29,8 @@ export default function Leagues() {
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string; active: boolean } | null>(null)
   const [actionError, setActionError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
+  const [archiveError, setArchiveError] = useState<string | null>(null)
+  const [detailView, setDetailView] = useState<'summary' | 'matches'>('summary')
 
   const activeComplete = Boolean(active && active.rounds.every((round) => round.status === 'finished'))
 
@@ -38,8 +40,11 @@ export default function Leagues() {
 
   async function loadArchive() {
     setArchiveLoading(true)
+    setArchiveError(null)
     try {
       setArchive(await listFinishedLeagues())
+    } catch (error) {
+      setArchiveError(error instanceof Error ? error.message : 'No se pudo cargar el histórico')
     } finally {
       setArchiveLoading(false)
     }
@@ -48,8 +53,12 @@ export default function Leagues() {
   async function openLeague(league: League) {
     setSelectedTitle(league.name)
     setDetailLoading(true)
+    setDetailView('summary')
     try {
       setSelected(await getLeagueData(league))
+    } catch (error) {
+      setActionError(error instanceof Error ? error.message : 'No se pudo abrir el detalle de la liga')
+      setSelectedTitle(null)
     } finally {
       setDetailLoading(false)
     }
@@ -114,6 +123,7 @@ export default function Leagues() {
   return (
     <div className="space-y-5">
       <BusyOverlay open={saving} label="Guardando cambios…" />
+      <Link to="/ajustes" className="inline-flex min-h-11 items-center text-sm font-semibold text-brand">← Volver a Más</Link>
       {actionError && (
         <Card className="border border-red-200 bg-red-50 text-red-900">
           <p className="text-sm font-medium">{actionError}</p>
@@ -121,7 +131,7 @@ export default function Leagues() {
       )}
 
       <section className="space-y-3">
-        <h2 className="text-lg font-bold">Liga actual</h2>
+        <h1 className="text-lg font-bold">Liga actual</h1>
 
         {active ? (
           <Card className="space-y-3">
@@ -156,11 +166,7 @@ export default function Leagues() {
               </div>
             ) : (
               <div className="space-y-2">
-                <Link to="/">
-                  <Button full variant="secondary">
-                    Volver a la ronda actual
-                  </Button>
-                </Link>
+                <Link to="/" className="flex min-h-11 items-center justify-center rounded-xl bg-neutral-200 px-4 py-2.5 font-semibold text-neutral-900">Volver a la ronda actual</Link>
                 <Button
                   full
                   variant="danger"
@@ -181,9 +187,7 @@ export default function Leagues() {
             <p className="text-sm text-neutral-500">
               Puedes iniciar una nueva sin perder el histórico de las anteriores.
             </p>
-            <Link to="/sorteo">
-              <Button full>Nueva liga</Button>
-            </Link>
+            <Link to="/sorteo" className="flex min-h-11 items-center justify-center rounded-xl bg-brand px-4 py-2.5 font-semibold text-white">Nueva liga</Link>
           </Card>
         )}
       </section>
@@ -192,6 +196,8 @@ export default function Leagues() {
         <h2 className="text-lg font-bold">Histórico de ligas</h2>
         {archiveLoading ? (
           <Spinner />
+        ) : archiveError ? (
+          <EmptyState title="No se pudo cargar el histórico">{archiveError}</EmptyState>
         ) : archive.length === 0 ? (
           <EmptyState title="Aún no hay ligas cerradas">Cuando finalices una, aparecerá aquí.</EmptyState>
         ) : (
@@ -250,7 +256,11 @@ export default function Leagues() {
           <Spinner />
         ) : (
           <div className="space-y-5">
-            <section className="space-y-2">
+            <div className="flex rounded-xl bg-neutral-200 p-1">
+              <button aria-pressed={detailView === 'summary'} onClick={() => setDetailView('summary')} className={detailView === 'summary' ? 'min-h-11 flex-1 rounded-lg bg-white font-semibold text-brand shadow-sm' : 'min-h-11 flex-1 font-semibold text-neutral-700'}>Clasificación</button>
+              <button aria-pressed={detailView === 'matches'} onClick={() => setDetailView('matches')} className={detailView === 'matches' ? 'min-h-11 flex-1 rounded-lg bg-white font-semibold text-brand shadow-sm' : 'min-h-11 flex-1 font-semibold text-neutral-700'}>Partidos</button>
+            </div>
+            {detailView === 'summary' && <section className="space-y-2">
               <p className="text-sm font-semibold text-neutral-600">Clasificación global</p>
               {selectedStandings.map((row, index) => (
                 <div key={row.playerId} className="flex items-center justify-between rounded-xl bg-neutral-50 px-4 py-3">
@@ -264,9 +274,9 @@ export default function Leagues() {
                   <p className="text-lg font-bold text-brand">{row.points}</p>
                 </div>
               ))}
-            </section>
+            </section>}
 
-            <section className="space-y-4">
+            {detailView === 'summary' && <section className="space-y-4">
               <p className="text-sm font-semibold text-neutral-600">Clasificación por ronda</p>
               {selected.rounds.map((round) => {
                 const roundStandings = computeStandings({
@@ -299,9 +309,9 @@ export default function Leagues() {
                   </div>
                 )
               })}
-            </section>
+            </section>}
 
-            <section className="space-y-3">
+            {detailView === 'matches' && <section className="space-y-3">
               <p className="text-sm font-semibold text-neutral-600">Rondas</p>
               {selected.rounds.map((round) => {
                 const pairById = new Map(selected.pairs.map((pair) => [pair.id, pair]))
@@ -309,8 +319,8 @@ export default function Leagues() {
                   .filter((day) => day.round_id === round.id)
                   .sort((a, b) => a.number - b.number)
                 return (
-                  <div key={round.id} className="space-y-3">
-                    <p className="font-semibold">Ronda {round.number}</p>
+                  <details key={round.id} className="space-y-3 rounded-2xl bg-neutral-50 p-3" open={round.number === 1}>
+                    <summary className="cursor-pointer font-semibold">Ronda {round.number}</summary>
                     {roundDays.map((day) => (
                       <div key={day.id} className="space-y-2 rounded-2xl bg-neutral-50 p-3">
                         <p className="font-medium text-neutral-700">Jornada {day.number}</p>
@@ -330,10 +340,10 @@ export default function Leagues() {
                           ))}
                       </div>
                     ))}
-                  </div>
+                  </details>
                 )
               })}
-            </section>
+            </section>}
           </div>
         )}
       </Sheet>

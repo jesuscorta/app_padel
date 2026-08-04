@@ -5,7 +5,7 @@ import { advanceScheduleIfComplete, clearMatchScore, saveMatchScore } from '../l
 import { computeMatchScore, matchToScoreInput, validateMatchScore, type MatchScoreInput } from '../lib/scoring'
 import { setActualPlayer } from '../lib/db/substitutions'
 import { pairLabel } from '../lib/format'
-import { Badge, BusyOverlay, Button, Card, Sheet, cx } from './ui'
+import { Badge, BusyOverlay, Button, Card, Notice, Sheet, cx } from './ui'
 import { IconBall } from './icons'
 import type { BallDuty, Match, MatchPlayer, Pair, Player } from '../types'
 
@@ -143,6 +143,8 @@ export default function MatchCard({
       setScoreError(null)
       setScoreOpen(false)
       await onChanged()
+    } catch (error) {
+      setScoreError(error instanceof Error ? error.message : 'No se pudo guardar el resultado')
     } finally {
       setSaving(false)
     }
@@ -154,6 +156,8 @@ export default function MatchCard({
       await clearMatchScore(match.id)
       setScoreOpen(false)
       await onChanged()
+    } catch (error) {
+      setScoreError(error instanceof Error ? error.message : 'No se pudo quitar el resultado')
     } finally {
       setSaving(false)
     }
@@ -177,6 +181,8 @@ export default function MatchCard({
       setSelectedSlotId(null)
       setAbsencePair(null)
       await onChanged()
+    } catch (error) {
+      setLineupError(error instanceof Error ? error.message : 'No se pudo guardar el sustituto')
     } finally {
       setSaving(false)
     }
@@ -197,17 +203,14 @@ export default function MatchCard({
           isWinner ? 'border-brand/30 bg-brand/5' : 'border-neutral-200 bg-neutral-50',
         )}
       >
-        <button
-          disabled
-          className="w-full text-center"
-        >
+        <div className="w-full text-center">
           {slots.map((s) => (
             <p key={s.id} className="text-sm leading-6 font-semibold">
               {slotLabel(players, s)}
             </p>
           ))}
           {isWinner && <Badge className="mt-1 bg-brand text-white">Ganador</Badge>}
-        </button>
+        </div>
 
         {!readOnly && (
           <div className="mt-3 flex justify-center">
@@ -230,18 +233,18 @@ export default function MatchCard({
       <BusyOverlay open={saving} label="Guardando partido…" />
       <div className="mb-2 flex items-center justify-between gap-3">
         <div className="space-y-0.5">
-          <p className="text-xs font-semibold uppercase tracking-wide text-neutral-400">Partido</p>
+           <p className="text-xs font-semibold uppercase tracking-wide text-neutral-600">Partido</p>
           {readOnly ? (
             <p className="text-sm font-medium text-neutral-500">Solo lectura</p>
           ) : (
-            <p className="text-sm font-semibold text-brand">Añade el marcador</p>
+            <p className="text-sm font-semibold text-brand">{winner ? 'Resultado registrado' : 'Pendiente de resultado'}</p>
           )}
         </div>
         {winner && <Badge className="bg-brand text-white">Cerrado</Badge>}
       </div>
       <div className="flex items-stretch gap-2">
         {renderPair(pairA, slotsA)}
-        <span className="self-center text-xs font-bold text-neutral-400">VS</span>
+          <span className="self-center text-xs font-bold text-neutral-600">VS</span>
         {renderPair(pairB, slotsB)}
       </div>
 
@@ -253,7 +256,7 @@ export default function MatchCard({
 
       <div className="mt-3 flex items-center justify-between gap-3 text-xs text-neutral-500">
         <div className="min-w-0">
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-neutral-400">Marcador</p>
+           <p className="text-[11px] font-semibold uppercase tracking-wide text-neutral-600">Marcador</p>
           <p className="truncate font-semibold text-neutral-700">{scoreSummary?.scoreLine ?? 'Sin marcador'}</p>
         </div>
         <span className="flex items-center gap-1.5">
@@ -278,12 +281,14 @@ export default function MatchCard({
               ['Set 2', 'set2A', 'set2B', 'set2TbA', 'set2TbB'],
               ['Set 3', 'set3A', 'set3B', 'set3TbA', 'set3TbB'],
             ].map(([label, aKey, bKey, tbAKey, tbBKey]) => (
-              <div key={label} className="space-y-2">
-                <p className="text-sm font-semibold text-neutral-600">{label}</p>
+              <fieldset key={label} className="space-y-2">
+                <legend className="text-sm font-semibold text-neutral-700">{label}</legend>
                 <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
                   <input
                     type="number"
                     min="0"
+                    inputMode="numeric"
+                    aria-label={`${label}, juegos de ${pairLabel(players, pairA)}`}
                     value={String(scoreForm[aKey as keyof ScoreFormState] ?? '')}
                     onChange={(event) =>
                       setScoreForm((current) => ({
@@ -297,6 +302,8 @@ export default function MatchCard({
                   <input
                     type="number"
                     min="0"
+                    inputMode="numeric"
+                    aria-label={`${label}, juegos de ${pairLabel(players, pairB)}`}
                     value={String(scoreForm[bKey as keyof ScoreFormState] ?? '')}
                     onChange={(event) =>
                       setScoreForm((current) => ({
@@ -313,6 +320,8 @@ export default function MatchCard({
                     <input
                       type="number"
                       min="0"
+                      inputMode="numeric"
+                      aria-label={`${label}, tie-break de ${pairLabel(players, pairA)}`}
                       value={String(scoreForm[tbAKey as keyof ScoreFormState] ?? '')}
                       onChange={(event) =>
                         setScoreForm((current) => ({
@@ -326,6 +335,8 @@ export default function MatchCard({
                     <input
                       type="number"
                       min="0"
+                      inputMode="numeric"
+                      aria-label={`${label}, tie-break de ${pairLabel(players, pairB)}`}
                       value={String(scoreForm[tbBKey as keyof ScoreFormState] ?? '')}
                       onChange={(event) =>
                         setScoreForm((current) => ({
@@ -343,6 +354,8 @@ export default function MatchCard({
                     <input
                       type="number"
                       min="0"
+                      inputMode="numeric"
+                      aria-label={`${label}, tie-break de ${pairLabel(players, pairA)}`}
                       value={String(scoreForm[tbAKey as keyof ScoreFormState] ?? '')}
                       onChange={(event) =>
                         setScoreForm((current) => ({
@@ -356,6 +369,8 @@ export default function MatchCard({
                     <input
                       type="number"
                       min="0"
+                      inputMode="numeric"
+                      aria-label={`${label}, tie-break de ${pairLabel(players, pairB)}`}
                       value={String(scoreForm[tbBKey as keyof ScoreFormState] ?? '')}
                       onChange={(event) =>
                         setScoreForm((current) => ({
@@ -367,7 +382,7 @@ export default function MatchCard({
                     />
                   </div>
                 )}
-              </div>
+              </fieldset>
             ))}
           </div>
 
@@ -382,7 +397,7 @@ export default function MatchCard({
             Tercer set incompleto
           </label>
 
-          {scoreError && <p className="text-sm font-medium text-red-600">{scoreError}</p>}
+          {(scoreError || scoreValidation) && <Notice tone="error">{scoreError ?? scoreValidation}</Notice>}
 
           {scoreSummary && (
             <div className="rounded-xl bg-brand/5 px-4 py-3 text-sm text-brand">
@@ -393,7 +408,7 @@ export default function MatchCard({
             </div>
           )}
 
-          <div className="flex gap-3">
+          <div className="flex flex-col gap-3 sm:flex-row">
             {winner && (
               <Button variant="danger" full disabled={saving} onClick={onClearScore}>
                 Quitar resultado
@@ -468,19 +483,9 @@ export default function MatchCard({
 
               <div className="space-y-2">
                 {substitutes.length === 0 && (
-                  <div className="space-y-2 rounded-xl bg-amber-50 p-3 text-sm text-amber-900">
+              <div className="space-y-2 rounded-xl bg-amber-50 p-3 text-sm text-amber-900">
                     <p>No hay sustitutos activos creados todavía.</p>
-                    <Link
-                      to="/jugadores"
-                      onClick={() => {
-                        setAbsencePair(null)
-                        setSelectedSlotId(null)
-                      }}
-                    >
-                      <Button variant="secondary" full>
-                        Ir a Jugadores
-                      </Button>
-                    </Link>
+                    <Link to="/jugadores" className="flex min-h-11 items-center justify-center rounded-xl bg-neutral-200 px-4 py-2.5 font-semibold text-neutral-900" onClick={() => { setAbsencePair(null); setSelectedSlotId(null) }}>Ir a Jugadores</Link>
                   </div>
                 )}
                 {substitutes.map((substitute) => (

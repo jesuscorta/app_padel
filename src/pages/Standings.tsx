@@ -1,14 +1,15 @@
 import { useState } from 'react'
 import { useLeague } from '../lib/LeagueContext'
 import { computeStandings, type StandingsMode } from '../lib/standings'
-import { Badge, Card, EmptyState, SegmentedControl, Spinner, cx } from '../components/ui'
+import { Badge, Card, EmptyState, ErrorState, SegmentedControl, Spinner, cx } from '../components/ui'
 
 export default function Standings() {
-  const { players, active, loading } = useLeague()
+  const { players, active, loading, failed, error, refresh } = useLeague()
   const [mode, setMode] = useState<StandingsMode>('titulares')
   const [scope, setScope] = useState<'global' | number>('global')
 
   if (loading) return <Spinner />
+  if (failed) return <ErrorState onRetry={() => void refresh()}>{error}</ErrorState>
   if (!active) {
     return (
       <EmptyState title="Sin liga activa">
@@ -30,7 +31,7 @@ export default function Standings() {
   return (
     <div className="space-y-4">
       <div className="space-y-2">
-        <h2 className="text-lg font-bold">Clasificación individual</h2>
+        <h1 className="text-lg font-bold">Clasificación individual</h1>
         <SegmentedControl
           value={mode}
           onChange={setMode}
@@ -42,6 +43,7 @@ export default function Standings() {
         <div className="flex gap-1 overflow-x-auto pb-1">
           <button
             onClick={() => setScope('global')}
+            aria-pressed={scope === 'global'}
             className={cx(
               'min-h-10 rounded-full px-3 text-sm font-semibold whitespace-nowrap transition',
               scope === 'global'
@@ -55,6 +57,7 @@ export default function Standings() {
             <button
               key={round.id}
               onClick={() => setScope(round.number)}
+              aria-pressed={scope === round.number}
               className={cx(
                 'min-h-10 rounded-full px-3 text-sm font-semibold whitespace-nowrap transition',
                 scope === round.number
@@ -72,7 +75,7 @@ export default function Standings() {
         <Card className="border border-brand/10 bg-brand/5 py-3">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-neutral-400">Pareja TOP</p>
+               <p className="text-[11px] font-semibold uppercase tracking-wide text-neutral-600">Top 2 individual</p>
               <p className="text-base font-bold text-neutral-900">
                 {topPair[0].name} <span className="text-neutral-400">&</span> {topPair[1].name}
               </p>
@@ -82,7 +85,7 @@ export default function Standings() {
         </Card>
       )}
 
-      <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white">
+       {standings.length === 0 ? <EmptyState title="Aún no hay clasificación">Los puntos aparecerán al cerrar los primeros partidos.</EmptyState> : <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white" aria-label="Clasificación individual">
         {standings.map((row, index) => (
           <div key={row.playerId} className="flex items-center gap-3 border-b border-neutral-100 px-4 py-3 last:border-0">
             <span className="w-6 text-center text-sm font-bold text-neutral-500">{index + 1}</span>
@@ -96,7 +99,7 @@ export default function Standings() {
             <p className="text-lg font-black text-brand">{row.points}</p>
           </div>
         ))}
-      </div>
+      </div>}
     </div>
   )
 }

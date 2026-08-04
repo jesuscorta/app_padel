@@ -6,6 +6,7 @@ import { listPlayers } from './db/players'
 interface LeagueContextValue {
   loading: boolean
   error: string | null
+  failed: boolean
   stale: boolean
   players: Player[]
   active: LeagueData | null
@@ -40,6 +41,7 @@ function writeCache(value: SnapshotCache) {
 export function LeagueProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [failed, setFailed] = useState(false)
   const [stale, setStale] = useState(false)
   const [players, setPlayers] = useState<Player[]>([])
   const [active, setActive] = useState<LeagueData | null>(null)
@@ -47,6 +49,7 @@ export function LeagueProvider({ children }: { children: ReactNode }) {
   const refresh = useCallback(async () => {
     const cached = readCache()
     setError(null)
+    setFailed(false)
     try {
       const [playersData, activeData] = await Promise.all([listPlayers(), getActiveLeagueData()])
       setStale(false)
@@ -60,6 +63,7 @@ export function LeagueProvider({ children }: { children: ReactNode }) {
         setStale(true)
         setError('Sin conexión: mostrando la última información guardada en este dispositivo')
       } else {
+        setFailed(true)
         setError(e instanceof Error ? e.message : 'Error al cargar los datos')
       }
     } finally {
@@ -72,7 +76,7 @@ export function LeagueProvider({ children }: { children: ReactNode }) {
   }, [refresh])
 
   return (
-    <LeagueContext.Provider value={{ loading, error, stale, players, active, refresh }}>
+    <LeagueContext.Provider value={{ loading, error, failed, stale, players, active, refresh }}>
       {children}
     </LeagueContext.Provider>
   )

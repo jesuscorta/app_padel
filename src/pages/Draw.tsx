@@ -5,7 +5,7 @@ import { useLeague } from '../lib/LeagueContext'
 import { createLeague } from '../lib/db/leagues'
 import { shuffle } from '../lib/draw'
 import { generateRoundPairings } from '../lib/schedule'
-import { BusyOverlay, Button, Card, ConfirmSheet, Spinner } from '../components/ui'
+import { BusyOverlay, Button, Card, ConfirmSheet, Notice, Spinner } from '../components/ui'
 import type { Player } from '../types'
 
 export default function Draw() {
@@ -58,9 +58,7 @@ export default function Draw() {
         <p className="text-sm text-neutral-500">
           La liga actual ya tiene generadas sus 7 rondas.
         </p>
-        <Link to="/">
-          <Button full>Ir a la jornada</Button>
-        </Link>
+        <Link to="/" className="flex min-h-11 items-center justify-center rounded-xl bg-brand px-4 py-2.5 font-semibold text-white">Ir a la jornada</Link>
       </Card>
     )
   }
@@ -72,9 +70,7 @@ export default function Draw() {
         <p className="text-sm text-neutral-500">
           Ahora hay {titulares.length}. Completa la lista antes del sorteo.
         </p>
-        <Link to="/jugadores">
-          <Button full>Gestionar jugadores</Button>
-        </Link>
+        <Link to="/jugadores" className="flex min-h-11 items-center justify-center rounded-xl bg-brand px-4 py-2.5 font-semibold text-white">Gestionar jugadores</Link>
       </Card>
     )
   }
@@ -97,8 +93,9 @@ export default function Draw() {
   return (
     <div className="space-y-4">
       <BusyOverlay open={saving} label="Generando liga…" />
+      <Link to="/ajustes" className="inline-flex min-h-11 items-center text-sm font-semibold text-brand">← Volver a Más</Link>
       <div className="space-y-1">
-        <h2 className="text-lg font-bold">Sorteo de la liga</h2>
+        <h1 className="text-lg font-bold">Sorteo de la liga</h1>
         <p className="text-sm text-neutral-500">
           Repite el sorteo todas las veces que quieras. Al confirmar se generarán las 7 rondas
           completas, sin repetir ninguna pareja.
@@ -115,10 +112,11 @@ export default function Draw() {
       </label>
 
       <div className="space-y-3">
-        {rounds.map((round) => (
-          <div key={round.round} className="space-y-2">
-            <p className="text-sm font-semibold text-neutral-600">Ronda {round.round}</p>
-            {round.pairs.map(([player1Id, player2Id], index) => (
+          {rounds.map((round) => (
+            <details key={round.round} className="rounded-2xl bg-neutral-50 p-3" open={round.round === 1}>
+              <summary className="cursor-pointer text-sm font-semibold text-neutral-700">Ronda {round.round}</summary>
+              <div className="mt-2 space-y-2">
+              {round.pairs.map(([player1Id, player2Id], index) => (
               <Card key={`${round.round}-${index}`} className="flex items-center gap-3">
                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand text-sm font-bold text-white">
                   {index + 1}
@@ -129,14 +127,15 @@ export default function Draw() {
                   {playerById.get(player2Id)?.name ?? '—'}
                 </span>
               </Card>
-            ))}
-          </div>
+              ))}
+              </div>
+            </details>
         ))}
       </div>
 
-      {error && <p className="text-sm font-medium text-red-600">{error}</p>}
+      {error && <Notice tone="error">{error}</Notice>}
 
-      <div className="flex gap-3">
+      <div className="sticky bottom-20 flex gap-3 rounded-2xl bg-white/95 p-2 shadow-lg backdrop-blur">
         <Button variant="secondary" full disabled={saving} onClick={randomizeOrder}>
           Repetir sorteo
         </Button>

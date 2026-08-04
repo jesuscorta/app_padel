@@ -8,9 +8,9 @@ export default function Settings() {
   if (!isAdmin) return <EmptyState title="Sin acceso">Esta zona es solo para administración.</EmptyState>
   return (
     <div className="space-y-4">
-      <h2 className="text-lg font-bold">Más</h2>
+      <h1 className="text-lg font-bold">Más</h1>
       <section className="space-y-2">
-        <p className="text-xs font-semibold uppercase tracking-wide text-neutral-400">Gestión de liga</p>
+        <p className="text-xs font-semibold uppercase tracking-wide text-neutral-600">Gestión de liga</p>
         <Card className="divide-y divide-neutral-100 p-0">
           <Link to="/ligas" className="flex items-center justify-between px-4 py-4 font-medium">
             Ligas
@@ -24,7 +24,7 @@ export default function Settings() {
       </section>
 
       <section className="space-y-2">
-        <p className="text-xs font-semibold uppercase tracking-wide text-neutral-400">Personas</p>
+        <p className="text-xs font-semibold uppercase tracking-wide text-neutral-600">Personas</p>
         <Card className="divide-y divide-neutral-100 p-0">
           <Link to="/jugadores" className="flex items-center justify-between px-4 py-4 font-medium">
             Jugadores

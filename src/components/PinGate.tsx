@@ -38,6 +38,7 @@ export default function PinGate({ children }: { children: ReactNode }) {
           <button
             type="button"
             onClick={() => setNextRole('participant')}
+            aria-pressed={nextRole === 'participant'}
             className={nextRole === 'participant' ? 'rounded-xl bg-white px-3 py-2 text-sm font-bold text-brand' : 'rounded-xl px-3 py-2 text-sm font-bold text-white'}
           >
             Participante
@@ -45,6 +46,7 @@ export default function PinGate({ children }: { children: ReactNode }) {
           <button
             type="button"
             onClick={() => setNextRole('admin')}
+            aria-pressed={nextRole === 'admin'}
             className={nextRole === 'admin' ? 'rounded-xl bg-white px-3 py-2 text-sm font-bold text-brand' : 'rounded-xl px-3 py-2 text-sm font-bold text-white'}
           >
             Admin
@@ -55,10 +57,12 @@ export default function PinGate({ children }: { children: ReactNode }) {
             ? 'Modo solo lectura'
             : 'Modo completo de administración'}
         </p>
+        <label className="sr-only" htmlFor="access-code">{nextRole === 'participant' ? 'Código de acceso de participante' : 'PIN de administrador'}</label>
         <input
+          id="access-code"
           type="password"
           inputMode="numeric"
-          autoComplete="off"
+          autoComplete="one-time-code"
           autoFocus
           value={code}
           onChange={(e) => {
@@ -68,7 +72,7 @@ export default function PinGate({ children }: { children: ReactNode }) {
           placeholder={nextRole === 'participant' ? 'Código de 4 dígitos' : 'PIN de admin'}
           className="w-full rounded-xl border-0 px-4 py-3 text-center text-2xl tracking-[0.5em] text-neutral-900 outline-none focus:ring-4 focus:ring-accent/60"
         />
-        {error && <p className="text-center text-sm font-medium text-red-200">{error}</p>}
+        {error && <p className="text-center text-sm font-medium text-red-200" role="alert">{error}</p>}
         <button
           type="submit"
           disabled={saving || !code.trim()}

@@ -12,6 +12,11 @@ import Settings from './pages/Settings'
 import Players from './pages/Players'
 import Draw from './pages/Draw'
 import Leagues from './pages/Leagues'
+import { Link } from 'react-router-dom'
+
+function NotFound() {
+  return <main className="mx-auto flex min-h-dvh max-w-md flex-col items-center justify-center gap-4 p-6 text-center"><h1 className="text-2xl font-bold text-brand">Página no encontrada</h1><p className="text-neutral-600">La dirección no existe o ya no está disponible.</p><Link to="/" className="flex min-h-11 items-center rounded-xl bg-brand px-4 py-2.5 font-semibold text-white">Ir a Jornada</Link></main>
+}
 
 const router = createBrowserRouter([
   {
@@ -33,6 +38,7 @@ const router = createBrowserRouter([
       { path: '/jugadores', element: <Players /> },
       { path: '/ligas', element: <Leagues /> },
       { path: '/sorteo', element: <Draw /> },
+      { path: '*', element: <NotFound /> },
     ],
   },
 ])

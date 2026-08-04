@@ -4,7 +4,7 @@ import ShareDayCard from '../components/ShareDayCard'
 import { useAuth } from '../lib/AuthContext'
 import { useLeague } from '../lib/LeagueContext'
 import MatchCard from '../components/MatchCard'
-import { Badge, BusyOverlay, Button, Card, EmptyState, Spinner, cx } from '../components/ui'
+import { Badge, BusyOverlay, Button, Card, EmptyState, ErrorState, Notice, Spinner, cx } from '../components/ui'
 import { IconChevronLeft, IconChevronRight, IconShare } from '../components/icons'
 import { pairLabel } from '../lib/format'
 import { computeMatchScoreFromMatch } from '../lib/scoring'
@@ -12,7 +12,7 @@ import { shareNodeAsImage } from '../lib/share'
 
 export default function Home() {
   const { isAdmin } = useAuth()
-  const { players, active, loading, refresh } = useLeague()
+  const { players, active, loading, failed, error, refresh } = useLeague()
   const [selectedRoundNumber, setSelectedRoundNumber] = useState<number | null>(null)
   const [selectedDayNumber, setSelectedDayNumber] = useState<number | null>(null)
   const [transitionMessage, setTransitionMessage] = useState<string | null>(null)
@@ -48,14 +48,6 @@ export default function Home() {
     setSelectedRoundNumber(currentRound.number)
     setSelectedDayNumber(currentDay.number)
   }, [currentRound, currentDay])
-
-  useEffect(() => {
-    if (!active || !currentRound || selectedRoundNumber === null) return
-    const selectedRound = active.rounds.find((round) => round.number === selectedRoundNumber)
-    if (selectedRound && selectedRound.status === 'finished' && selectedRound.number < currentRound.number) {
-      setSelectedRoundNumber(currentRound.number)
-    }
-  }, [active, currentRound, selectedRoundNumber])
 
   useEffect(() => {
     if (!currentRound || !viewedRound || !viewedRoundDays.length) return
@@ -121,14 +113,13 @@ export default function Home() {
   )
 
   if (loading) return <Spinner />
+  if (failed) return <ErrorState onRetry={() => void refresh()}>{error}</ErrorState>
 
   if (!active) {
     return (
       <EmptyState title="No hay liga activa">
-        <p className="mb-4">Sortea las 7 rondas para empezar una nueva liga.</p>
-        <Link to="/sorteo">
-          <Button>Ir al sorteo</Button>
-        </Link>
+        <p className="mb-4">{isAdmin ? 'Sortea las 7 rondas para empezar una nueva liga.' : 'El administrador creará la próxima liga cuando esté lista.'}</p>
+        {isAdmin && <Link to="/sorteo" className="inline-flex min-h-11 items-center rounded-xl bg-brand px-4 py-2.5 font-semibold text-white">Ir al sorteo</Link>}
       </EmptyState>
     )
   }
@@ -140,11 +131,7 @@ export default function Home() {
         <p className="text-sm text-neutral-500">
           Se han jugado las 7 rondas. Consulta la clasificación o cierra la liga desde Más.
         </p>
-        <Link to="/clasificacion">
-          <Button full className="mt-2">
-            Ver clasificación final
-          </Button>
-        </Link>
+        <Link to="/clasificacion" className="mt-2 flex min-h-11 items-center justify-center rounded-xl bg-brand px-4 py-2.5 font-semibold text-white">Ver clasificación final</Link>
       </Card>
     )
   }
@@ -181,21 +168,17 @@ export default function Home() {
     <div className="space-y-3">
       <BusyOverlay open={sharing} label="Generando imagen…" />
       {transitionMessage && (
-        <Card className="border border-brand/20 bg-brand/5 py-3 text-sm font-medium text-brand">
-          {transitionMessage}
-        </Card>
+        <Notice tone="success">{transitionMessage}</Notice>
       )}
 
       {shareMessage && (
-        <Card className="border border-neutral-200 bg-neutral-50 py-3 text-sm font-medium text-neutral-700">
-          {shareMessage}
-        </Card>
+        <Notice tone={shareMessage.startsWith('No se pudo') ? 'error' : 'success'}>{shareMessage}</Notice>
       )}
 
       <Card className="space-y-3 p-3.5">
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            <h2 className="text-base font-black">Ronda {displayedRound.number} de 7</h2>
+            <h1 className="text-base font-black">Ronda {displayedRound.number} de 7</h1>
             {displayedRound.number === currentRoundNumber && (
               <Badge className="bg-brand/10 text-brand">Actual</Badge>
             )}
@@ -232,7 +215,7 @@ export default function Home() {
         )}
 
         <div className="space-y-1.5">
-          <p className="text-xs font-semibold uppercase tracking-wide text-neutral-400">Rondas</p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-neutral-600">Rondas</p>
           <div className="flex items-center gap-2">
             <button
               className="flex h-9 w-9 items-center justify-center rounded-full bg-brand text-white disabled:opacity-30"
@@ -245,8 +228,9 @@ export default function Home() {
               <div className="flex flex-1 gap-2 overflow-x-auto pb-1">
                 {active.rounds.map((round) => (
                   <button
-                    key={round.id}
-                    onClick={() => setSelectedRoundNumber(round.number)}
+                     key={round.id}
+                     onClick={() => setSelectedRoundNumber(round.number)}
+                     aria-pressed={round.number === displayedRound.number}
                     className={cx(
                       'min-h-10 rounded-full px-3.5 text-sm font-bold whitespace-nowrap transition',
                       round.number === displayedRound.number
@@ -272,7 +256,7 @@ export default function Home() {
         {displayedDay && (
           <div className="mx-auto w-full max-w-sm space-y-2 rounded-2xl border border-neutral-200 bg-neutral-50 p-3">
             <div className="flex flex-col items-center gap-2 text-center">
-              <p className="text-xs font-semibold uppercase tracking-wide text-neutral-400">Jornadas</p>
+               <p className="text-xs font-semibold uppercase tracking-wide text-neutral-600">Jornadas</p>
               <div className="flex flex-wrap items-center justify-center gap-2">
                 <h3 className="font-semibold text-neutral-800">Jornada {displayedDay.number} de 3</h3>
                 {displayedRound.id === currentRound.id && displayedDay.number === currentDay?.number && (
@@ -295,6 +279,7 @@ export default function Home() {
                   <button
                     key={day.id}
                     onClick={() => setSelectedDayNumber(day.number)}
+                    aria-pressed={day.number === displayedDay.number}
                     className={cx(
                       'min-h-8 rounded-full px-3 text-sm font-semibold whitespace-nowrap transition',
                       day.number === displayedDay.number
@@ -334,13 +319,13 @@ export default function Home() {
       ))}
 
       {isAdmin && isViewingCurrent ? (
-        <p className="text-center text-xs text-neutral-400">Toca una pareja para registrar el ganador del partido</p>
+        <p className="text-center text-xs text-neutral-600">Añade el marcador para calcular automáticamente el ganador</p>
       ) : (
-        <p className="text-center text-xs font-medium text-neutral-400">Estás viendo una jornada en solo lectura</p>
+        <p className="text-center text-xs font-medium text-neutral-600">Estás viendo una jornada en solo lectura</p>
       )}
 
       {currentRound && currentDay && (
-        <div className="pointer-events-none fixed left-[-9999px] top-0">
+        <div className="pointer-events-none fixed left-[-9999px] top-0" aria-hidden="true">
           <div ref={shareCardRef}>
             <ShareDayCard
               leagueName={active.league.name}
