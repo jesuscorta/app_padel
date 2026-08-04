@@ -69,41 +69,32 @@ export default function Standings() {
       </div>
 
       {topPair && (
-        <Card className="overflow-hidden border border-brand/10 bg-linear-to-br from-brand/8 via-white to-accent/10 p-0">
-          <div className="space-y-3 p-4">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-neutral-400">Pareja TOP</p>
-                <h3 className="mt-1 text-xl font-black text-neutral-900">
-                  {topPair[0].name} <span className="text-neutral-400">&</span> {topPair[1].name}
-                </h3>
-              </div>
-              <Badge className="bg-brand text-white">TOP</Badge>
+        <Card className="border border-brand/10 bg-brand/5 py-3">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-neutral-400">Pareja TOP</p>
+              <p className="text-base font-bold text-neutral-900">
+                {topPair[0].name} <span className="text-neutral-400">&</span> {topPair[1].name}
+              </p>
             </div>
+            <Badge className="bg-brand text-white">TOP</Badge>
           </div>
         </Card>
       )}
 
-      <div className="space-y-3">
+      <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white">
         {standings.map((row, index) => (
-          <Card key={row.playerId} className="flex items-center gap-3">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand text-sm font-bold text-white">
-              {index + 1}
-            </span>
+          <div key={row.playerId} className="flex items-center gap-3 border-b border-neutral-100 px-4 py-3 last:border-0">
+            <span className="w-6 text-center text-sm font-bold text-neutral-500">{index + 1}</span>
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
-                <p className="truncate font-semibold">{row.name}</p>
-                {row.role === 'sustituto' && <Badge className="bg-amber-100 text-amber-800">Sustituto</Badge>}
+                <p className="truncate font-semibold text-neutral-900">{row.name}</p>
+                {row.role === 'sustituto' && <Badge className="bg-amber-100 text-amber-800">S</Badge>}
               </div>
-              <p className="text-xs text-neutral-500">
-                PJ {row.played} · PG {row.wins} · % {(row.winRate * 100).toFixed(0)}
-              </p>
+              <p className="text-xs text-neutral-500">PJ {row.played} · PG {row.wins}</p>
             </div>
-            <div className="text-right">
-              <p className="text-2xl font-black text-brand">{row.points}</p>
-              <p className="text-xs text-neutral-500">pts</p>
-            </div>
-          </Card>
+            <p className="text-lg font-black text-brand">{row.points}</p>
+          </div>
         ))}
       </div>
     </div>

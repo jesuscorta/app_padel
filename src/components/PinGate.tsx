@@ -30,6 +30,9 @@ export default function PinGate({ children }: { children: ReactNode }) {
       <BusyOverlay open={saving} label="Entrando…" />
       <IconBall className="h-16 w-16 text-accent" />
       <h1 className="text-2xl font-bold text-white">Liga de Pádel</h1>
+      <p className="max-w-xs text-center text-sm text-white/80">
+        Entra como participante para consultar la liga o como admin para gestionarla.
+      </p>
       <form onSubmit={onSubmit} className="w-full max-w-xs space-y-3">
         <div className="grid grid-cols-2 gap-2 rounded-2xl bg-white/10 p-1">
           <button
@@ -47,6 +50,11 @@ export default function PinGate({ children }: { children: ReactNode }) {
             Admin
           </button>
         </div>
+        <p className="text-center text-xs text-white/70">
+          {nextRole === 'participant'
+            ? 'Modo solo lectura'
+            : 'Modo completo de administración'}
+        </p>
         <input
           type="password"
           inputMode="numeric"

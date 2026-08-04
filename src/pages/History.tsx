@@ -1,6 +1,6 @@
 import { useLeague } from '../lib/LeagueContext'
 import HistoryMatchRow from '../components/HistoryMatchRow'
-import { Badge, EmptyState, Spinner } from '../components/ui'
+import { EmptyState, Spinner } from '../components/ui'
 
 export default function History() {
   const { players, active, loading } = useLeague()
@@ -40,18 +40,14 @@ export default function History() {
       {finishedRounds.map((round) => {
         const roundDays = roundDaysByRound.get(round.id) ?? []
         return (
-          <section key={round.id} className="space-y-3">
+          <section key={round.id} className="space-y-2">
             <div className="flex items-center justify-between">
               <h3 className="font-semibold">Ronda {round.number}</h3>
-              <Badge className="bg-green-100 text-green-800">Finalizada</Badge>
             </div>
 
             {roundDays.map((day) => (
               <div key={day.id} className="space-y-2 rounded-2xl bg-neutral-50 p-3">
-                <div className="flex items-center justify-between">
-                  <p className="font-medium text-neutral-700">Jornada {day.number}</p>
-                  <Badge className="bg-green-100 text-green-800">Finalizada</Badge>
-                </div>
+                <p className="text-sm font-medium text-neutral-700">Jornada {day.number}</p>
 
                 {active.matches
                   .filter((match) => match.day_id === day.id && match.winner_pair_id !== null)

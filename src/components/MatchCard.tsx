@@ -193,8 +193,8 @@ export default function MatchCard({
     return (
       <div
         className={cx(
-          'flex-1 rounded-2xl border-2 p-3 transition',
-          isWinner ? 'border-brand bg-brand/5' : 'border-transparent bg-neutral-100',
+          'flex-1 rounded-2xl border p-3 transition',
+          isWinner ? 'border-brand/30 bg-brand/5' : 'border-neutral-200 bg-neutral-50',
         )}
       >
         <button
@@ -228,12 +228,16 @@ export default function MatchCard({
   return (
     <Card>
       <BusyOverlay open={saving} label="Guardando partido…" />
-      <div className="mb-3 flex items-center justify-between gap-3">
-        {readOnly ? (
-          <Badge className="bg-neutral-200 text-neutral-600">Solo lectura</Badge>
-        ) : (
-          <p className="text-sm font-semibold text-brand">Añade el marcador del partido</p>
-        )}
+      <div className="mb-2 flex items-center justify-between gap-3">
+        <div className="space-y-0.5">
+          <p className="text-xs font-semibold uppercase tracking-wide text-neutral-400">Partido</p>
+          {readOnly ? (
+            <p className="text-sm font-medium text-neutral-500">Solo lectura</p>
+          ) : (
+            <p className="text-sm font-semibold text-brand">Añade el marcador</p>
+          )}
+        </div>
+        {winner && <Badge className="bg-brand text-white">Cerrado</Badge>}
       </div>
       <div className="flex items-stretch gap-2">
         {renderPair(pairA, slotsA)}
@@ -247,8 +251,11 @@ export default function MatchCard({
         </Button>
       )}
 
-      <div className="mt-3 flex items-center justify-between text-xs text-neutral-500">
-        <span className="font-semibold text-neutral-700">{scoreSummary?.scoreLine ?? 'Sin marcador'}</span>
+      <div className="mt-3 flex items-center justify-between gap-3 text-xs text-neutral-500">
+        <div className="min-w-0">
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-neutral-400">Marcador</p>
+          <p className="truncate font-semibold text-neutral-700">{scoreSummary?.scoreLine ?? 'Sin marcador'}</p>
+        </div>
         <span className="flex items-center gap-1.5">
           <IconBall className="h-4 w-4 text-brand" />
           Pelotas:{' '}

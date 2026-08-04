@@ -178,7 +178,7 @@ export default function Home() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <BusyOverlay open={sharing} label="Generando imagen…" />
       {transitionMessage && (
         <Card className="border border-brand/20 bg-brand/5 py-3 text-sm font-medium text-brand">
@@ -192,20 +192,20 @@ export default function Home() {
         </Card>
       )}
 
-      <Card className="space-y-4">
-        <div className="flex items-baseline justify-between">
+      <Card className="space-y-3 p-3.5">
+        <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            <h2 className="text-lg font-bold">Ronda {displayedRound.number} de 7</h2>
+            <h2 className="text-base font-black">Ronda {displayedRound.number} de 7</h2>
             {displayedRound.number === currentRoundNumber && (
               <Badge className="bg-brand/10 text-brand">Actual</Badge>
             )}
           </div>
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-neutral-500">{done}/2 partidos</span>
+          <div className="flex items-center gap-1.5">
+            <span className="text-xs font-semibold text-neutral-500">{done}/2</span>
             {isViewingCurrent && currentDay && (
               <button
                 type="button"
-                className="flex h-9 w-9 items-center justify-center rounded-full bg-neutral-100 text-neutral-700 transition active:bg-neutral-200 disabled:opacity-40"
+                className="flex h-8 w-8 items-center justify-center rounded-full bg-neutral-100 text-neutral-700 transition active:bg-neutral-200 disabled:opacity-40"
                 disabled={sharing}
                 onClick={onShareCurrentDay}
                 aria-label="Compartir jornada"
@@ -221,6 +221,7 @@ export default function Home() {
           <Button
             variant="secondary"
             full
+            className="min-h-10 text-sm"
             onClick={() => {
               setSelectedRoundNumber(currentRound.number)
               setSelectedDayNumber(currentDay?.number ?? 1)
@@ -230,27 +231,27 @@ export default function Home() {
           </Button>
         )}
 
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           <p className="text-xs font-semibold uppercase tracking-wide text-neutral-400">Rondas</p>
           <div className="flex items-center gap-2">
             <button
-              className="flex h-10 w-10 items-center justify-center rounded-full bg-brand text-white disabled:opacity-30"
+              className="flex h-9 w-9 items-center justify-center rounded-full bg-brand text-white disabled:opacity-30"
               disabled={displayedRound.number === 1}
               onClick={() => setSelectedRoundNumber(displayedRound.number - 1)}
               aria-label="Ronda anterior"
             >
               <IconChevronLeft className="h-5 w-5" />
             </button>
-            <div className="flex flex-1 gap-2 overflow-x-auto pb-1">
-              {active.rounds.map((round) => (
-                <button
-                  key={round.id}
-                  onClick={() => setSelectedRoundNumber(round.number)}
-                  className={cx(
-                    'min-h-11 rounded-full px-4 text-sm font-bold whitespace-nowrap transition',
-                    round.number === displayedRound.number
-                      ? 'bg-brand text-white shadow-sm'
-                      : 'bg-neutral-100 text-neutral-600 active:bg-neutral-200',
+              <div className="flex flex-1 gap-2 overflow-x-auto pb-1">
+                {active.rounds.map((round) => (
+                  <button
+                    key={round.id}
+                    onClick={() => setSelectedRoundNumber(round.number)}
+                    className={cx(
+                      'min-h-10 rounded-full px-3.5 text-sm font-bold whitespace-nowrap transition',
+                      round.number === displayedRound.number
+                        ? 'bg-brand text-white shadow-sm'
+                        : 'bg-neutral-100 text-neutral-600 active:bg-neutral-200',
                   )}
                 >
                   Ronda {round.number}
@@ -258,7 +259,7 @@ export default function Home() {
               ))}
             </div>
             <button
-              className="flex h-10 w-10 items-center justify-center rounded-full bg-brand text-white disabled:opacity-30"
+              className="flex h-9 w-9 items-center justify-center rounded-full bg-brand text-white disabled:opacity-30"
               disabled={displayedRound.number === 7}
               onClick={() => setSelectedRoundNumber(displayedRound.number + 1)}
               aria-label="Ronda siguiente"
@@ -282,7 +283,7 @@ export default function Home() {
 
             <div className="flex items-center justify-center gap-2">
               <button
-                className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-neutral-700 ring-1 ring-neutral-200 disabled:opacity-30"
+                className="flex h-8 w-8 items-center justify-center rounded-full bg-white text-neutral-700 ring-1 ring-neutral-200 disabled:opacity-30"
                 disabled={displayedDay.number === 1}
                 onClick={() => setSelectedDayNumber(displayedDay.number - 1)}
                 aria-label="Jornada anterior"
@@ -295,7 +296,7 @@ export default function Home() {
                     key={day.id}
                     onClick={() => setSelectedDayNumber(day.number)}
                     className={cx(
-                      'min-h-9 rounded-full px-3 text-sm font-semibold whitespace-nowrap transition',
+                      'min-h-8 rounded-full px-3 text-sm font-semibold whitespace-nowrap transition',
                       day.number === displayedDay.number
                         ? 'bg-white text-brand ring-2 ring-brand/20'
                         : 'bg-neutral-200 text-neutral-600 active:bg-neutral-300',
@@ -306,7 +307,7 @@ export default function Home() {
                 ))}
               </div>
               <button
-                className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-neutral-700 ring-1 ring-neutral-200 disabled:opacity-30"
+                className="flex h-8 w-8 items-center justify-center rounded-full bg-white text-neutral-700 ring-1 ring-neutral-200 disabled:opacity-30"
                 disabled={displayedDay.number === 3}
                 onClick={() => setSelectedDayNumber(displayedDay.number + 1)}
                 aria-label="Jornada siguiente"
